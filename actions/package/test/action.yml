@@ -16,9 +16,14 @@ description: |
   The action does not publish to PyPI. Enable it in the reusable workflow with
   `package: "true"` or a JSON object containing `tests`.
 
+  <!-- jscpd:ignore-start -->
+  <!-- Shared setup and reporting guidance for standalone actions. -->
+
   Run [setup-python](../../setup-python/README.md) first with the same `working-directory`.
 
   See the [continuous integration workflow](../../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
+
+  <!-- jscpd:ignore-end -->
 author: hoverkraft
 branding:
   icon: package

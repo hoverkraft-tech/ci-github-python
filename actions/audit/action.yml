@@ -10,9 +10,14 @@ description: |
   audit workflow. Vulnerability lookup requires network access and scanner failures
   fail the action. Dependency metadata is not rewritten.
 
+  <!-- jscpd:ignore-start -->
+  <!-- Shared setup and reporting guidance for standalone actions. -->
+
   Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
 
   See the [continuous integration workflow](../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
+
+  <!-- jscpd:ignore-end -->
 author: hoverkraft
 branding:
   icon: package

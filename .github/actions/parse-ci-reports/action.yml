@@ -1,5 +1,5 @@
 ---
-name: Collect CI reports
+name: Parse CI reports
 description:
   Parse native reports, publish summaries and retain selected files in one artifact. Internal helper for lint and
   test.

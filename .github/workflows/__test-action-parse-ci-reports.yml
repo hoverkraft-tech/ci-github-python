@@ -1,5 +1,5 @@
 ---
-name: Internal - Test retain-reports action
+name: Internal - Test parse-ci-reports action
 "on":
   workflow_call: null
 permissions: {}
@@ -19,7 +19,7 @@ jobs:
         run: mkdir -p "$RUNNER_TEMP/empty-reports"
       - name: Act - Retain no reports
         id: empty
-        uses: $/.github/actions/retain-reports
+        uses: $/.github/actions/parse-ci-reports
         with:
           directory: ${{ runner.temp }}/empty-reports
           group: reports
@@ -34,7 +34,7 @@ jobs:
           printf '%s\n' 'not a report' > "$RUNNER_TEMP/report-fixture/private.txt"
       - name: Act - Retain the selected report
         id: report
-        uses: $/.github/actions/retain-reports
+        uses: $/.github/actions/parse-ci-reports
         with:
           directory: ${{ runner.temp }}/report-fixture
           group: reports

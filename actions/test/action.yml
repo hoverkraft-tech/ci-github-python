@@ -8,15 +8,25 @@ description: |
   A trusted Bash `command` replaces the default and must produce JUnit for test
   reporting and `cobertura.xml` for coverage. The common parser handles both formats.
 
+  <!-- jscpd:ignore-start -->
+  <!-- Shared setup and reporting guidance for standalone actions. -->
+
   Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
+
+  <!-- jscpd:ignore-end -->
 
   `coverage: "github"` is the default. Set `coverage: "codecov"` and grant the
   job `id-token: write` for OIDC upload of `cobertura.xml`. An empty coverage
   value disables publication while retaining JUnit; collection is controlled by
   the command. Custom commands must produce the applicable report files.
 
+  <!-- jscpd:ignore-start -->
+  <!-- Shared setup and reporting guidance for standalone actions. -->
+
   Native reports survive command failures and are retained for seven days.
   See the [continuous integration workflow](../../.github/workflows/continuous-integration.md#reports-and-permissions) for consolidated reporting and permissions.
+
+  <!-- jscpd:ignore-end -->
 author: hoverkraft
 branding:
   icon: package
@@ -67,7 +77,7 @@ runs:
     - name: Report test results
       id: report-artifact
       if: ${{ !cancelled() && steps.run.outcome != 'skipped' }}
-      uses: $/.github/actions/retain-reports
+      uses: $/.github/actions/parse-ci-reports
       with:
         directory: ${{ steps.directory.outputs.absolute-path }}
         report-paths: ${{ inputs.coverage == 'github' && 'auto:test,auto:coverage' || 'auto:test' }}

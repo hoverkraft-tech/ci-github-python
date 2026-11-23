@@ -9,6 +9,8 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+    outputs:
+      artifact-id: ${{ steps.failed-lint.outputs.report-artifact-id }}
     steps:
       - name: Arrange - Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -39,10 +41,17 @@ jobs:
         env:
           OUTCOME: ${{ steps.failed-lint.outcome }}
           ARTIFACT: ${{ steps.failed-lint.outputs.report-artifact-id }}
+  verify:
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
       - name: Assert - Download retained lint reports
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
-          artifact-ids: ${{ steps.failed-lint.outputs.report-artifact-id }}
+          artifact-ids: ${{ needs.lint.outputs.artifact-id }}
           path: ${{ runner.temp }}/lint-reports
       - name: Assert - Retained report contains the diagnostic
         shell: bash

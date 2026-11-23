@@ -18,7 +18,7 @@ jobs:
   release:
     needs: ci
     if: github.event_name != 'schedule' && vars.CI_BOT_APP_CLIENT_ID != ''
-    uses: hoverkraft-tech/ci-github-publish/.github/workflows/release-actions.yml@4193622a365c0ab0bcbd6645895fd2c3126b72ba
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/release-actions.yml@79515002f850e714d4c76f07983e6eb1ba97bea5 # 3.1.1
     permissions:
       contents: read
     with:

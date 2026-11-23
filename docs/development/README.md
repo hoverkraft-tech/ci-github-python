@@ -18,6 +18,25 @@ Use a private disk-backed temporary directory or the managed scratch wrapper
 for local tests. Keep caches under ignored `.cache/` and clean disposable files
 after use. `make ci` runs checks without automatically fixing source.
 
+## Dev container
+
+Open the repository with Visual Studio Code's "Dev Containers: Reopen in Container" command
+or create a GitHub Codespace. The [configuration](../../.devcontainer/devcontainer.json)
+provides Node.js, uv and the Python runtime selected by the fixture, GitHub CLI with `gh act`,
+and Docker-in-Docker for `make lint` and `make docs`.
+Nested Docker requires a host that supports privileged containers.
+
+The container runs development commands as `vscode` and waits for `make setup`
+to install dependencies before attaching. Run `make ci` in its terminal to execute
+the repository checks. Setup uses the fixture's `.python-version` and `uv.lock`.
+Visual Studio Code uses the resulting fixture virtual environment, with Black
+and Ruff extensions.
+
+The [Dockerfile](../../.devcontainer/Dockerfile) pins the base and tool images.
+The generated feature lockfile pins installers. Dependabot updates these images
+and feature locks; Renovate maintains runtime versions in the configuration.
+Rebuild the container after changing its configuration, Dockerfile or lockfile.
+
 ## Coverage
 
 The Node tests execute workflow configuration directly to check matrix selection,

@@ -21,6 +21,7 @@ updates:
   - package-ecosystem: docker
     directories:
       - /
+      - /.devcontainer
     schedule:
       interval: weekly
       day: friday
@@ -64,5 +65,20 @@ updates:
     open-pull-requests-limit: 10
     groups:
       uv-dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: devcontainers
+    directory: /
+    schedule:
+      interval: weekly
+      day: friday
+    commit-message:
+      prefix: build
+      include: scope
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 10
+    groups:
+      devcontainers-dependencies:
         patterns:
           - "*"

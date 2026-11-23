@@ -41,7 +41,7 @@ jobs:
       - name: Assert - Explicit version wins without synchronizing
         shell: bash
         run: |
-          python_path=$(uv python find)
+          python_path=$(uv python find --managed-python "$UV_PYTHON")
           "$python_path" -c 'import sys; assert sys.version_info[:2] == (3, 13)'
           test ! -d .venv
           test ! -f uv.lock

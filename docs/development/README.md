@@ -3,7 +3,7 @@
 Install Node.js from `.node-version`, npm, uv and a supported Python runtime, and Docker.
 Node.js and the development-only `yaml` dependency exercise the actual inline
 Actions configuration scripts. Lint and test actions share the internal
-[retain-reports action](../../.github/actions/retain-reports/README.md), which owns
+[parse-ci-reports action](../../.github/actions/parse-ci-reports/README.md), which owns
 file selection, unique artifact naming and uploads.
 
 ```sh
@@ -21,9 +21,11 @@ after use. `make ci` runs checks without automatically fixing source.
 ## Coverage
 
 The Node tests execute workflow configuration directly to check matrix selection,
-disable switches and invalid input. Action boundary tests execute real Bash
-command wrappers to detect quoting and failure-propagation bugs, validate setup
-preconditions and check artifact selection. They do not mock language tools.
+disable switches and invalid input.
+[Action contract tests](../../tests/action-contracts.test.cjs) load the actual
+action metadata and execute its Bash commands and JavaScript. They check command
+quoting, failure propagation, setup preconditions and artifact selection without
+mocking language tools.
 
 `__test-workflow-continuous-integration.yml` calls the public workflow with real
 fixture versions and checks disabled behavior. Each action has a dedicated
@@ -36,8 +38,10 @@ language's arithmetic implementation.
 ## Documentation
 
 Edit action metadata or workflow header comments, then run `make docs`.
-This uses the same CI Dokumentor release as the shared `release-actions.yml`
-workflow. Never edit generated action readmes or workflow reference files by hand.
+The [reference template](../../.github/ci-dokumentor/reference.md) supplies section
+markers and scoped duplication comments. The same CI Dokumentor release as the
+shared `release-actions.yml` workflow fills those sections. Never edit generated
+action readmes or workflow reference files by hand.
 Usage belongs directly in generated action and workflow readmes. Put source
 guidance in action descriptions and workflow header comments so `make docs`
 preserves it. Contributor procedures belong here.
@@ -64,17 +68,18 @@ the consumer repository using its registry and release policy.
 
 ## Branding
 
-The SVG assets use the [Hoverkraft project badge](https://github.com/hoverkraft-tech/branding/tree/main/brand/identity)
-and [Inter](https://github.com/rsms/inter). Text is outlined so rendering does
-not depend on installed fonts. `.github/logo.svg` is the compact badge;
-`.github/social-preview.svg` is the source for the 1280 x 640 PNG preview.
-After changing the SVG, export the PNG at those dimensions and inspect both.
-The Python mark comes from the [Python Software Foundation](https://www.python.org/community/logos/)
-and retains its original colors and proportions.
+The SVG assets derive from the supplied Hoverkraft project artwork. Outlined
+wordmarks and language marks preserve the supplied shapes without requiring fonts.
+`.github/logo.svg` contains the compact badge. `.github/social-preview.svg` places
+the full badge and wordmark on a white 1280 x 640 canvas; export it at those exact
+dimensions to regenerate `.github/social-preview.png` and inspect the result.
 
-Duplication checks cover action metadata, runtime helpers, workflows and SVG assets.
-Only generated reference readmes and third-party vendor files are excluded from
-copy detection; generated readmes still pass Markdown validation.
+Duplication checks include every repository source and reference file. Inline
+markers cover repeated generated API sections and repository boilerplate in the
+reference template. Action metadata marks only repeated setup and reporting
+paragraphs; unique overview text and examples remain checked. The generator
+preserves these markers, and all Markdown sections still receive formatting and
+Markdown validation.
 
 Super-Linter reads the fixture's `pyproject.toml` for Black, Ruff, isort and mypy.
 It uses the same first-party import classification as project-local checks.

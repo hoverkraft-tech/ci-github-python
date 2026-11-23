@@ -1,3 +1,6 @@
+// Exercise the Bash and JavaScript embedded in action.yml without installing
+// language tools. GitHub runner and artifact behavior is covered by the dedicated
+// __test-action-* workflows.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -116,7 +119,7 @@ test("report artifacts contain only parsed reports and use unique names", async 
     "process",
     "require",
     YAML.parse(
-      fs.readFileSync(".github/actions/retain-reports/action.yml", "utf8"),
+      fs.readFileSync(".github/actions/parse-ci-reports/action.yml", "utf8"),
     ).runs.steps.find((item) => item.id === "prepare").with.script,
   );
   async function outputs(files, group = "outer-job") {

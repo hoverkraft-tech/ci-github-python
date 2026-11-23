@@ -35,7 +35,12 @@ description: |
         working-directory: .
   ```
 
+  <!-- jscpd:ignore-start -->
+  <!-- Shared setup and reporting guidance for standalone actions. -->
+
   See the [continuous integration workflow](../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
+
+  <!-- jscpd:ignore-end -->
 author: hoverkraft
 branding:
   icon: package

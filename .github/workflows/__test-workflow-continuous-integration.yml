@@ -1,3 +1,4 @@
+---
 name: Internal - Test continuous integration workflow
 "on":
   workflow_call: null

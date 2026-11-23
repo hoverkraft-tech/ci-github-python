@@ -96,6 +96,7 @@
 # [test](../../actions/test/README.md) and [audit](../../actions/audit/README.md)
 # for standalone action usage. Pin the workflow to a reviewed commit SHA in production.
 
+---
 name: Python Continuous Integration
 "on":
   workflow_call:
@@ -207,7 +208,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - &checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
       - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec
@@ -219,10 +221,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - uses: $/actions/setup-python
+      - *checkout
+      - &setup-primary
+        uses: $/actions/setup-python
         with:
           working-directory: ${{ inputs.working-directory }}
           python-version: ${{ needs.configuration.outputs.primary-version }}
@@ -240,9 +241,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
+      - *checkout
       - uses: $/actions/setup-python
         with:
           working-directory: ${{ inputs.working-directory }}
@@ -265,14 +264,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - uses: $/actions/setup-python
-        with:
-          working-directory: ${{ inputs.working-directory }}
-          python-version: ${{ needs.configuration.outputs.primary-version }}
-          uv-version: ${{ inputs.uv-version }}
+      - *checkout
+      - *setup-primary
       - uses: $/actions/audit
         with:
           working-directory: ${{ inputs.working-directory }}
@@ -284,14 +277,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - uses: $/actions/setup-python
-        with:
-          working-directory: ${{ inputs.working-directory }}
-          python-version: ${{ needs.configuration.outputs.primary-version }}
-          uv-version: ${{ inputs.uv-version }}
+      - *checkout
+      - *setup-primary
       - uses: $/actions/package/test
         with:
           working-directory: ${{ inputs.working-directory }}

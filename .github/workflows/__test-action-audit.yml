@@ -1,3 +1,4 @@
+---
 name: Internal - Test audit action
 "on":
   workflow_call: null

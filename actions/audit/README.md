@@ -24,14 +24,6 @@ audit workflow. Vulnerability lookup requires network access and scanner failure
 fail the action. Dependency metadata is not rewritten.
 
 Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
-This action reuses the installed environment. Use the same reviewed commit SHA
-for both actions. Do not populate command inputs from untrusted pull request text.
-
-```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/audit@main
-  with:
-    working-directory: .
-```
 
 See the [continuous integration workflow](../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
 
@@ -41,7 +33,7 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/audit@0efcccef629a5715a6dff199a1b45add8eb5b397 # main
+- uses: hoverkraft-tech/ci-github-python/actions/audit@753b119b5e5563b8612f9e0f542d0e4cbaba6221 # fix/enforce-lint-checks
   with:
     # uv project directory.
     # Default: `.`

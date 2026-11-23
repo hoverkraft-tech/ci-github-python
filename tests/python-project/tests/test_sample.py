@@ -1,10 +1,13 @@
 """Exercise the installed fixture package."""
 
-import pytest
-
 from ci_python_fixture import add
 
 
-@pytest.mark.parametrize(("left", "right", "expected"), [(2, 3, 5), (-2, 1, -1)])
-def test_add(left: int, right: int, expected: int) -> None:
-    assert add(left, right) == expected
+def test_add_positive_numbers() -> None:
+    """Add two positive numbers."""
+    assert add(2, 3) == 5
+
+
+def test_add_negative_number() -> None:
+    """Add numbers with opposite signs."""
+    assert add(-2, 1) == -1

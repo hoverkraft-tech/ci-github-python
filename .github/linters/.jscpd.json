@@ -3,8 +3,6 @@
   "ignore": [
     "**/vendor/**",
     "**/actions/**/README.md",
-    "**/.github/workflows/*.md",
-    "**/.github/logo.svg",
-    "**/.github/social-preview.svg"
+    "**/.github/workflows/*.md"
   ]
 }

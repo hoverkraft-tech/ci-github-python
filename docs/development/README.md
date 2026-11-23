@@ -2,7 +2,9 @@
 
 Install Node.js from `.node-version`, npm, uv and a supported Python runtime, and Docker.
 Node.js and the development-only `yaml` dependency exercise the actual inline
-Actions configuration scripts. No JavaScript build or runtime bundle is shipped.
+Actions configuration scripts. Lint and test actions share the internal
+[retain-reports action](../../.github/actions/retain-reports/README.md), which owns
+file selection, unique artifact naming and uploads.
 
 ```sh
 make setup
@@ -67,5 +69,9 @@ After changing the SVG, export the PNG at those dimensions and inspect both.
 The Python mark comes from the [Python Software Foundation](https://www.python.org/community/logos/)
 and retains its original colors and proportions.
 
-Duplication checks exclude generated references, self-contained usage descriptions
-and the shared SVG artwork. Executable workflow steps remain checked.
+Duplication checks cover action metadata, runtime helpers, workflows and SVG assets.
+Only generated reference readmes and third-party vendor files are excluded from
+copy detection; generated readmes still pass Markdown validation.
+
+Super-Linter reads the fixture's `pyproject.toml` for Black, Ruff, isort and mypy.
+It uses the same first-party import classification as project-local checks.

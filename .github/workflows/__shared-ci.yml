@@ -1,3 +1,4 @@
+---
 name: Internal - Common Continuous Integration tasks
 "on":
   workflow_call: null
@@ -15,13 +16,12 @@ jobs:
       security-events: write
     with:
       linter-env: |
-        VALIDATE_GO=false
-        VALIDATE_GO_MODULES=false
-        VALIDATE_PYTHON_BLACK=false
-        VALIDATE_PYTHON_RUFF=false
-        VALIDATE_PYTHON_MYPY=false
-        VALIDATE_PYTHON_PYLINT=false
-        VALIDATE_PYTHON_ISORT=false
+        LOG_LEVEL=INFO
+        VALIDATE_PYTHON_TOOLCHAIN=black
+        PYTHON_BLACK_CONFIG_FILE=../../tests/python-project/pyproject.toml
+        PYTHON_RUFF_CONFIG_FILE=../../tests/python-project/pyproject.toml
+        PYTHON_ISORT_CONFIG_FILE=../../tests/python-project/pyproject.toml
+        PYTHON_MYPY_CONFIG_FILE=../../tests/python-project/pyproject.toml
   test:
     uses: $/.github/workflows/__test-workflow-continuous-integration.yml
     permissions:
@@ -45,5 +45,9 @@ jobs:
       contents: read
   test-action-package-test:
     uses: $/.github/workflows/__test-action-package-test.yml
+    permissions:
+      contents: read
+  test-action-retain-reports:
+    uses: $/.github/workflows/__test-action-retain-reports.yml
     permissions:
       contents: read

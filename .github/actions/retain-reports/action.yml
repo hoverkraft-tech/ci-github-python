@@ -1,0 +1,62 @@
+---
+name: Collect CI reports
+description:
+  Parse native reports, publish summaries and retain selected files in one artifact. Internal helper for lint and
+  test.
+inputs:
+  directory:
+    description: Validated absolute project directory.
+    required: true
+  report-paths:
+    description: Report paths or auto selectors passed to the common parser.
+    default: auto:test
+  group:
+    description: Calling job ID used to group reports.
+    required: true
+  report-name:
+    description: Title of the GitHub report summary.
+    default: CI reports
+outputs:
+  artifact-id:
+    description: Uploaded artifact ID, or empty when no report files exist.
+    value: ${{ steps.upload.outputs.artifact-id }}
+runs:
+  using: composite
+  steps:
+    - id: parse
+      if: ${{ !cancelled() }}
+      uses: hoverkraft-tech/ci-github-common/actions/quality/parse-ci-reports@66882b24f9f13e45a6541896a5a7c638cb91c94c
+      with:
+        working-directory: ${{ inputs.directory }}
+        report-paths: |
+          ${{ inputs.report-paths }}
+          !**/.venv/**
+          !**/.git/**
+          !**/.cache/**
+          !**/vendor/**
+        report-name: ${{ inputs.report-name }}
+        output-format: annotations,summary,markdown
+    - id: prepare
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+      env:
+        DIRECTORY: ${{ inputs.directory }}
+        REPORT_FILES: ${{ steps.parse.outputs.parsed-files }}
+        REPORT_GROUP: ${{ inputs.group }}
+      with:
+        script: |
+          const files = JSON.parse(process.env.REPORT_FILES || '[]');
+          if (!files.length) return;
+          const group = process.env.REPORT_GROUP;
+          if (!/^[\w-]+$/.test(group)) throw new Error('report-group must be a job ID.');
+          core.setOutput('files', files.join('\n'));
+          core.setOutput('name', `ci-reports-${process.env.GITHUB_RUN_ATTEMPT}-${group}-${require('node:crypto').randomUUID()}`);
+      if: ${{ !cancelled() }}
+    - id: upload
+      if: ${{ !cancelled() && steps.prepare.outputs.files != '' }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: ${{ steps.prepare.outputs.name }}
+        path: ${{ steps.prepare.outputs.files }}
+        include-hidden-files: true
+        if-no-files-found: error
+        retention-days: 7

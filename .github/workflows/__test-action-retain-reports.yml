@@ -1,0 +1,49 @@
+---
+name: Internal - Test retain-reports action
+"on":
+  workflow_call: null
+permissions: {}
+jobs:
+  reports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Arrange - Empty report directory
+        run: mkdir -p "$RUNNER_TEMP/empty-reports"
+      - name: Act - Retain no reports
+        id: empty
+        uses: $/.github/actions/retain-reports
+        with:
+          directory: ${{ runner.temp }}/empty-reports
+          group: reports
+      - name: Assert - No empty artifact is created
+        env:
+          ARTIFACT: ${{ steps.empty.outputs.artifact-id }}
+        run: test -z "$ARTIFACT"
+      - name: Arrange - One report and an unrelated private file
+        run: |
+          mkdir -p "$RUNNER_TEMP/report-fixture"
+          printf '%s\n' '<testsuites tests="1"><testsuite name="fixture" tests="1"><testcase name="passes"/></testsuite></testsuites>' > "$RUNNER_TEMP/report-fixture/junit.xml"
+          printf '%s\n' 'not a report' > "$RUNNER_TEMP/report-fixture/private.txt"
+      - name: Act - Retain the selected report
+        id: report
+        uses: $/.github/actions/retain-reports
+        with:
+          directory: ${{ runner.temp }}/report-fixture
+          group: reports
+          report-paths: junit.xml
+      - name: Assert - Artifact can be downloaded
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          artifact-ids: ${{ steps.report.outputs.artifact-id }}
+          path: ${{ runner.temp }}/downloaded-reports
+      - name: Assert - Only the selected file was retained
+        run: |
+          test -f "$RUNNER_TEMP/downloaded-reports/junit.xml"
+          test ! -e "$RUNNER_TEMP/downloaded-reports/private.txt"
+          test "$(find "$RUNNER_TEMP/downloaded-reports" -type f | wc -l)" -eq 1

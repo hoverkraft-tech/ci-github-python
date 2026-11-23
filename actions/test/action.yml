@@ -1,6 +1,5 @@
+---
 name: Test Python
-# Usage is self-contained in every generated action readme.
-# jscpd:ignore-start
 description: |
   Run project-locked pytest with JUnit and Cobertura coverage.
 
@@ -10,31 +9,14 @@ description: |
   reporting and `cobertura.xml` for coverage. The common parser handles both formats.
 
   Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
-  This action reuses the installed environment. Use the same reviewed commit SHA
-  for both actions. Do not populate command inputs from untrusted pull request text.
-
-  ```yaml
-  - uses: hoverkraft-tech/ci-github-python/actions/test@main
-    with:
-      working-directory: .
-  ```
-
-  ### Reports
-
-  Native reports are retained for seven days, including after command failures.
-  Only report files are uploaded, with unique names for parallel calls. When no
-  reports are produced, `report-artifact-id` is empty. GitHub summaries and
-  annotations need only `contents: read`; individual PR comments are not created.
-  Use the common [ci-reports workflow](https://github.com/hoverkraft-tech/ci-github-common/blob/main/.github/workflows/ci-reports.yml)
-  for consolidated comments and set `report-group` to the outer calling job ID.
 
   `coverage: "github"` is the default. Set `coverage: "codecov"` and grant the
   job `id-token: write` for OIDC upload of `cobertura.xml`. An empty coverage
   value disables publication while retaining JUnit; collection is controlled by
   the command. Custom commands must produce the applicable report files.
 
-  See the [continuous integration workflow](../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
-# jscpd:ignore-end
+  Native reports survive command failures and are retained for seven days.
+  See the [continuous integration workflow](../../.github/workflows/continuous-integration.md#reports-and-permissions) for consolidated reporting and permissions.
 author: hoverkraft
 branding:
   icon: package
@@ -55,17 +37,14 @@ inputs:
 outputs:
   report-artifact-id:
     description: Native report artifact ID. Empty when no reports were produced.
-    value: ${{ steps.upload-reports.outputs.artifact-id }}
+    value: ${{ steps.report-artifact.outputs.artifact-id }}
 runs:
   using: composite
   steps:
-    # Shared working-directory validation, kept at each standalone entry point.
-    # jscpd:ignore-start
     - id: directory
       uses: hoverkraft-tech/ci-github-common/actions/working-directory@66882b24f9f13e45a6541896a5a7c638cb91c94c
       with:
         working-directory: ${{ inputs.working-directory }}
-    # jscpd:ignore-end
     - id: validate
       shell: bash
       env:
@@ -86,51 +65,14 @@ runs:
         fi
         bash --noprofile --norc -e -u -o pipefail -c "$COMMAND"
     - name: Report test results
-      id: reports
+      id: report-artifact
       if: ${{ !cancelled() && steps.run.outcome != 'skipped' }}
-      uses: hoverkraft-tech/ci-github-common/actions/quality/parse-ci-reports@66882b24f9f13e45a6541896a5a7c638cb91c94c
+      uses: $/.github/actions/retain-reports
       with:
-        working-directory: ${{ steps.directory.outputs.absolute-path }}
-        report-paths: |-
-          ${{ inputs.coverage == 'github' && 'auto:test,auto:coverage' || 'auto:test' }}
-          !**/.venv/**
-          !**/.git/**
-          !**/.cache/**
-          !**/vendor/**
+        directory: ${{ steps.directory.outputs.absolute-path }}
+        report-paths: ${{ inputs.coverage == 'github' && 'auto:test,auto:coverage' || 'auto:test' }}
         report-name: Python test results
-        output-format: annotations,summary,markdown
-    - id: report-artifact
-      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
-      if: ${{ !cancelled() && steps.run.outcome != 'skipped' }}
-      env:
-        DIRECTORY: ${{ steps.directory.outputs.absolute-path }}
-        REPORT_FILES: ${{ steps.reports.outputs.parsed-files }}
-        REPORT_GROUP: ${{ inputs.report-group || github.job }}
-        NATIVE_COVERAGE: "false"
-      with:
-        script: |
-          const fs = require('node:fs');
-          const path = require('node:path');
-          const files = JSON.parse(process.env.REPORT_FILES || '[]');
-          if (process.env.NATIVE_COVERAGE === 'true') {
-            const coverage = path.join(process.env.DIRECTORY, 'coverage.out');
-            if (fs.existsSync(coverage)) files.push(coverage);
-          }
-          if (!files.length) return;
-          const group = process.env.REPORT_GROUP;
-          if (!/^[\w-]+$/.test(group)) throw new Error('report-group must be a job ID.');
-          core.setOutput('files', files.join('\n'));
-          core.setOutput('name', `ci-reports-${process.env.GITHUB_RUN_ATTEMPT}-${group}-${require('node:crypto').randomUUID()}`);
-    - id: upload-reports
-      name: Retain native reports
-      if: ${{ !cancelled() && steps.report-artifact.outputs.files != '' }}
-      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-      with:
-        name: ${{ steps.report-artifact.outputs.name }}
-        path: ${{ steps.report-artifact.outputs.files }}
-        include-hidden-files: true
-        if-no-files-found: error
-        retention-days: 7
+        group: ${{ inputs.report-group || github.job }}
     - name: Upload coverage to Codecov
       if: ${{ !cancelled() && steps.run.outcome != 'skipped' && inputs.coverage == 'codecov' }}
       uses: hoverkraft-tech/ci-github-common/actions/quality/codecov@66882b24f9f13e45a6541896a5a7c638cb91c94c

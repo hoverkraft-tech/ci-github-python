@@ -1,3 +1,4 @@
+---
 name: Internal - Test setup-python action
 "on":
   workflow_call: null

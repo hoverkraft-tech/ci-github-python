@@ -1,6 +1,5 @@
+---
 name: Setup Python
-# Usage is self-contained in every generated action readme.
-# jscpd:ignore-start
 description: |
   Install Python and uv, cache downloads and synchronize locked dependencies.
 
@@ -37,7 +36,6 @@ description: |
   ```
 
   See the [continuous integration workflow](../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
-# jscpd:ignore-end
 author: hoverkraft
 branding:
   icon: package
@@ -62,13 +60,10 @@ outputs:
 runs:
   using: composite
   steps:
-    # Shared working-directory validation, kept at each standalone entry point.
-    # jscpd:ignore-start
     - id: directory
       uses: hoverkraft-tech/ci-github-common/actions/working-directory@66882b24f9f13e45a6541896a5a7c638cb91c94c
       with:
         working-directory: ${{ inputs.working-directory }}
-    # jscpd:ignore-end
     - id: validate
       shell: bash
       working-directory: ${{ steps.directory.outputs.absolute-path }}

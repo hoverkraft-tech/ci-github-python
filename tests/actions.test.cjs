@@ -115,7 +115,9 @@ test("report artifacts contain only parsed reports and use unique names", async 
     "core",
     "process",
     "require",
-    step("test", "report-artifact").with.script,
+    YAML.parse(
+      fs.readFileSync(".github/actions/retain-reports/action.yml", "utf8"),
+    ).runs.steps.find((item) => item.id === "prepare").with.script,
   );
   async function outputs(files, group = "outer-job") {
     const result = {};
@@ -130,7 +132,6 @@ test("report artifacts contain only parsed reports and use unique names", async 
           DIRECTORY: directory,
           REPORT_FILES: JSON.stringify(files),
           REPORT_GROUP: group,
-          NATIVE_COVERAGE: "false",
           GITHUB_RUN_ATTEMPT: "2",
         },
       },

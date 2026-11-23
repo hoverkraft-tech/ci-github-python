@@ -30,8 +30,18 @@ source = ["ci_python_fixture"]
 branch = true
 relative_files = true
 
+[tool.black]
+target-version = ["py313"]
+
 [tool.mypy]
 strict = true
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ci_python_fixture"]
+
+[tool.isort]
+profile = "black"
+known_first_party = ["ci_python_fixture"]

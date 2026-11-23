@@ -56,7 +56,7 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/lint@ec34d60ac2f4e0461052e53ff9561cf32f7fd9aa # fix/enforce-lint-checks
+- uses: hoverkraft-tech/ci-github-python/actions/lint@cd59232bc5455db2c034b00499a775411f1104b7 # fix/enforce-lint-checks
   with:
     # uv project directory.
     # Default: `.`

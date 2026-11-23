@@ -2,12 +2,20 @@
 
 # GitHub Action: Collect CI reports
 
+<div align="center">
+  <img src="../../logo.svg" width="60px" align="center" alt="Collect CI reports" />
+</div>
+
+---
+
 <!-- header:end -->
 <!-- badges:start -->
 
 [![Marketplace](https://img.shields.io/badge/Marketplace-collect--ci--reports-blue?logo=github-actions)](https://github.com/marketplace/actions/collect-ci-reports)
 [![Release](https://img.shields.io/github/v/release/hoverkraft-tech/ci-github-python)](https://github.com/hoverkraft-tech/ci-github-python/releases)
+[![License](https://img.shields.io/github/license/hoverkraft-tech/ci-github-python)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/hoverkraft-tech/ci-github-python?style=social)](https://img.shields.io/github/stars/hoverkraft-tech/ci-github-python?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hoverkraft-tech/ci-github-python/blob/main/CONTRIBUTING.md)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -22,7 +30,7 @@ Parse native reports, publish summaries and retain selected files in one artifac
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/.github/actions/retain-reports@b76a2704ad4ad5508679a7bf1aeb1cd8ef9c176e # fix/enforce-lint-checks
+- uses: hoverkraft-tech/ci-github-python/.github/actions/retain-reports@c7cf16c7de97e6eca04ca6467460a193bdc5ade1 # fix/enforce-lint-checks
   with:
     # Validated absolute project directory.
     # This input is required.
@@ -68,10 +76,26 @@ Parse native reports, publish summaries and retain selected files in one artifac
 <!-- examples:start -->
 <!-- examples:end -->
 <!-- contributing:start -->
+
+## Contributing
+
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/hoverkraft-tech/ci-github-python/blob/main/CONTRIBUTING.md) for more details.
+
 <!-- contributing:end -->
 <!-- security:start -->
 <!-- security:end -->
 <!-- license:start -->
+
+## License
+
+This project is licensed under the MIT License.
+
+SPDX-License-Identifier: MIT
+
+Copyright © 2026 hoverkraft-tech
+
+For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
 <!-- license:end -->
 <!-- generated:start -->
 

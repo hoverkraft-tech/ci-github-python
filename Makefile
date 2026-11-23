@@ -25,7 +25,7 @@ lint-fix: ## Apply supported formatting fixes
 	$(call run_linter,-e FIX_YAML_PRETTIER=true -e FIX_MARKDOWN=true -e FIX_MARKDOWN_PRETTIER=true -e FIX_BIOME_FORMAT=true -e FIX_BIOME_LINT=true)
 
 docs: ## Generate action and workflow references with CI Dokumentor
-	docker run --rm --user $(shell id -u):$(shell id -g) -v "$(CURDIR):/workspace" -w /workspace ghcr.io/hoverkraft-tech/ci-dokumentor/cli:0.6.0 generate --repository git --cicd github-actions --source 'actions/**/action.yml' '.github/actions/**/action.yml' '.github/workflows/[!_]*.yml'
+	docker run --rm --user $(shell id -u):$(shell id -g) -v "$(CURDIR):/workspace" -w /workspace -e GITHUB_TOKEN ghcr.io/hoverkraft-tech/ci-dokumentor/cli:0.6.0 generate --repository github --cicd github-actions --source 'actions/**/action.yml' '.github/actions/**/action.yml' '.github/workflows/[!_]*.yml'
 
 ci: setup test lint-fixture test-fixture lint ## Run checks without rewriting source
 

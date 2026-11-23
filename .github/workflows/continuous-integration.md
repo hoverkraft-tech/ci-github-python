@@ -2,11 +2,19 @@
 
 # GitHub Reusable Workflow: Python Continuous Integration
 
+<div align="center">
+  <img src="../logo.svg" width="60px" align="center" alt="Python Continuous Integration" />
+</div>
+
+---
+
 <!-- header:end -->
 <!-- badges:start -->
 
 [![Release](https://img.shields.io/github/v/release/hoverkraft-tech/ci-github-python)](https://github.com/hoverkraft-tech/ci-github-python/releases)
+[![License](https://img.shields.io/github/license/hoverkraft-tech/ci-github-python)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/hoverkraft-tech/ci-github-python?style=social)](https://img.shields.io/github/stars/hoverkraft-tech/ci-github-python?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hoverkraft-tech/ci-github-python/blob/main/CONTRIBUTING.md)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -130,7 +138,7 @@ on:
 permissions: {}
 jobs:
   continuous-integration:
-    uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@b76a2704ad4ad5508679a7bf1aeb1cd8ef9c176e # fix/enforce-lint-checks
+    uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@c7cf16c7de97e6eca04ca6467460a193bdc5ade1 # fix/enforce-lint-checks
     permissions:
       contents: read
       id-token: write
@@ -203,10 +211,26 @@ jobs:
 <!-- examples:start -->
 <!-- examples:end -->
 <!-- contributing:start -->
+
+## Contributing
+
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/hoverkraft-tech/ci-github-python/blob/main/CONTRIBUTING.md) for more details.
+
 <!-- contributing:end -->
 <!-- security:start -->
 <!-- security:end -->
 <!-- license:start -->
+
+## License
+
+This project is licensed under the MIT License.
+
+SPDX-License-Identifier: MIT
+
+Copyright © 2026 hoverkraft-tech
+
+For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
 <!-- license:end -->
 <!-- generated:start -->
 

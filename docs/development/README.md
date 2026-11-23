@@ -42,6 +42,9 @@ Usage belongs directly in generated action and workflow readmes. Put source
 guidance in action descriptions and workflow header comments so `make docs`
 preserves it. Contributor procedures belong here.
 
+Documentation generation reads GitHub metadata for repository logos and licensing.
+Set `GITHUB_TOKEN` when authentication is required or anonymous API limits are reached.
+
 ## Maintenance and releases
 
 External actions are pinned to immutable commits. Dependabot updates actions,

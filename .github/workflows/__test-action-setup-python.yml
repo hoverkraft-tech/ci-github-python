@@ -21,7 +21,7 @@ jobs:
       - name: Assert - Locked development environment is installed
         shell: bash
         run: |
-          test "$(uv -V)" = "uv $UV_VERSION"
+          test "$(uv self version --short)" = "$UV_VERSION"
           test -x tests/python-project/.venv/bin/python
           tests/python-project/.venv/bin/python -c 'import pytest, ci_python_fixture'
           git diff --exit-code -- tests/python-project/pyproject.toml tests/python-project/uv.lock

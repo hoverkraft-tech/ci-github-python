@@ -30,7 +30,7 @@ runs:
     # Shared working-directory validation, kept at each standalone entry point.
     # jscpd:ignore-start
     - id: directory
-      uses: hoverkraft-tech/ci-github-common/actions/working-directory@66882b24f9f13e45a6541896a5a7c638cb91c94c
+      uses: hoverkraft-tech/ci-github-common/actions/working-directory@d606f77fad305ef07dfde3db5270f5e324019c97
       with:
         working-directory: ${{ inputs.working-directory }}
     # jscpd:ignore-end
@@ -56,7 +56,7 @@ runs:
     - name: Report test results
       id: reports
       if: ${{ !cancelled() && steps.run.outcome != 'skipped' }}
-      uses: hoverkraft-tech/ci-github-common/actions/quality/parse-ci-reports@66882b24f9f13e45a6541896a5a7c638cb91c94c
+      uses: hoverkraft-tech/ci-github-common/actions/quality/parse-ci-reports@d606f77fad305ef07dfde3db5270f5e324019c97
       with:
         working-directory: ${{ steps.directory.outputs.absolute-path }}
         report-paths: |-
@@ -101,7 +101,7 @@ runs:
         retention-days: 7
     - name: Upload coverage to Codecov
       if: ${{ !cancelled() && steps.run.outcome != 'skipped' && inputs.coverage == 'codecov' }}
-      uses: hoverkraft-tech/ci-github-common/actions/quality/codecov@66882b24f9f13e45a6541896a5a7c638cb91c94c
+      uses: hoverkraft-tech/ci-github-common/actions/quality/codecov@d606f77fad305ef07dfde3db5270f5e324019c97
       with:
         working-directory: ${{ steps.directory.outputs.absolute-path }}
         files: cobertura.xml

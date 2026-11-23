@@ -24,7 +24,7 @@ See the [usage guide](../../../docs/usage/README.md).
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/package/test@f7c68ebb3ea6d60da7b6c741b2fc8fb67866cd4a # main
+- uses: hoverkraft-tech/ci-github-python/actions/package/test@21adde808aee6de52659796134d3d6c58759aac0 # main
   with:
     # uv package directory with a build-system.
     # Default: `.`

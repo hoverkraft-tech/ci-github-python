@@ -35,7 +35,7 @@ on:
 permissions: {}
 jobs:
   continuous-integration:
-    uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@f7c68ebb3ea6d60da7b6c741b2fc8fb67866cd4a # main
+    uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@21adde808aee6de52659796134d3d6c58759aac0 # main
     permissions:
       contents: read
       id-token: write

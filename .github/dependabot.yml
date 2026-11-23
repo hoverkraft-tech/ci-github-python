@@ -21,7 +21,6 @@ updates:
   - package-ecosystem: docker
     directories:
       - /
-      - /.devcontainer
     schedule:
       interval: weekly
       day: friday

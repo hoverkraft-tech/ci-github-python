@@ -22,7 +22,7 @@ Parse native reports, publish summaries and retain selected files in one artifac
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/.github/actions/retain-reports@753b119b5e5563b8612f9e0f542d0e4cbaba6221 # fix/enforce-lint-checks
+- uses: hoverkraft-tech/ci-github-python/.github/actions/retain-reports@b76a2704ad4ad5508679a7bf1aeb1cd8ef9c176e # fix/enforce-lint-checks
   with:
     # Validated absolute project directory.
     # This input is required.

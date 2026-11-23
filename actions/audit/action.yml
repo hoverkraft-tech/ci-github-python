@@ -1,0 +1,33 @@
+name: Audit Python
+description: |
+  Audit locked production dependencies with pip-audit. Excludes the project and development groups. The selected Python environment is exported from uv.lock; vulnerability lookup requires network access.
+
+  See the [usage guide](../../docs/usage/README.md).
+author: hoverkraft
+branding:
+  icon: package
+  color: blue
+inputs:
+  working-directory:
+    description: uv project directory.
+    default: .
+runs:
+  using: composite
+  steps:
+    # Shared working-directory validation, kept at each standalone entry point.
+    # jscpd:ignore-start
+    - id: directory
+      uses: hoverkraft-tech/ci-github-common/actions/working-directory@66882b24f9f13e45a6541896a5a7c638cb91c94c
+      with:
+        working-directory: ${{ inputs.working-directory }}
+    # jscpd:ignore-end
+    - id: audit
+      shell: bash
+      working-directory: ${{ steps.directory.outputs.absolute-path }}
+      env:
+        PIP_AUDIT_VERSION: 2.10.1
+      run: |
+        requirements=$(mktemp "$RUNNER_TEMP/python-audit.XXXXXX")
+        trap 'rm -f "$requirements"' EXIT
+        uv export --locked --no-default-groups --no-emit-project --format=requirements-txt --output-file="$requirements"
+        uvx --from "pip-audit==$PIP_AUDIT_VERSION" pip-audit --require-hashes --disable-pip --requirement "$requirements"

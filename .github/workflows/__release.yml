@@ -1,0 +1,58 @@
+name: Internal - Release
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  ci:
+    if: github.ref_type == 'branch' && github.ref_name == github.event.repository.default_branch && vars.CI_BOT_APP_CLIENT_ID != ''
+    uses: $/.github/workflows/__shared-ci.yml
+    permissions:
+      contents: read
+      statuses: write
+      issues: write
+      packages: read
+      pull-requests: write
+      actions: read
+      security-events: write
+      id-token: write
+  release:
+    name: Create and publish release
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - id: generate-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510
+        with:
+          client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: read
+      - name: Plan release
+        id: plan-release
+        uses: hoverkraft-tech/ci-github-publish/actions/release/plan@4193622a365c0ab0bcbd6645895fd2c3126b72ba
+        with:
+          target-ref: ${{ github.sha }}
+          force: ${{ github.event_name == 'workflow_dispatch' && inputs.force }}
+          github-token: ${{ steps.generate-token.outputs.token }}
+      - name: Create and publish release
+        if: steps.plan-release.outputs.should-release == 'true' && steps.plan-release.outputs.tag != ''
+        uses: hoverkraft-tech/ci-github-publish/actions/release/create@4193622a365c0ab0bcbd6645895fd2c3126b72ba
+        with:
+          tag: ${{ steps.plan-release.outputs.tag }}
+          target-ref: ${{ github.sha }}
+          publish: "true"
+          github-token: ${{ steps.generate-token.outputs.token }}
+"on":
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Release even when no relevant changes are detected
+        type: boolean
+        required: false
+        default: false
+  schedule:
+    - cron: 25 8 * * 1

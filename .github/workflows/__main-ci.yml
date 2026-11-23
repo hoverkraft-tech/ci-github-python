@@ -1,0 +1,39 @@
+name: Internal - Main - Continuous Integration
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  ci:
+    uses: $/.github/workflows/__shared-ci.yml
+    permissions:
+      contents: read
+      statuses: write
+      issues: write
+      packages: read
+      pull-requests: write
+      actions: read
+      security-events: write
+      id-token: write
+  release:
+    needs: ci
+    if: github.event_name != 'schedule' && vars.CI_BOT_APP_CLIENT_ID != ''
+    uses: hoverkraft-tech/ci-github-publish/.github/workflows/release-actions.yml@4193622a365c0ab0bcbd6645895fd2c3126b72ba
+    permissions:
+      contents: read
+    with:
+      update-all: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) || github.event_name == 'workflow_dispatch' }}
+      github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+      merge-method: squash
+      documentation-files: docs/**/*.md
+    secrets:
+      github-app-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
+"on":
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+  workflow_dispatch: null
+  schedule:
+    - cron: 25 8 * * 1

@@ -1,0 +1,203 @@
+# Run opinionated language checks with project-owned configuration.
+# See the [usage guide](../../docs/usage/README.md).
+
+name: Python Continuous Integration
+"on":
+  workflow_call:
+    inputs:
+      runs-on:
+        description: JSON array of Linux runner labels for all jobs.
+        type: string
+        default: '["ubuntu-latest"]'
+      checks:
+        description: Enable all checks, including build or distribution checks.
+        type: boolean
+        default: true
+      working-directory:
+        description: One project directory inside the checkout. Use a caller matrix for multiple projects.
+        type: string
+        default: .
+      python-versions:
+        description: JSON array of Python versions. The last entry runs lint, audit and build and publishes coverage. Empty runs project detection once. An empty entry uses the project version.
+        type: string
+        default: ""
+      lint:
+        description: true for default checks, a trusted Bash command, or a JSON object with command. false, null or empty disables lint.
+        type: string
+        default: "true"
+      test:
+        description: true for default tests, a trusted Bash command, or a JSON object with command, coverage (`github`, `codecov` or empty). false, null or empty disables tests. Coverage publication runs only on the last version; the command controls collection.
+        type: string
+        default: "true"
+      audit:
+        description: Check production dependencies for known vulnerabilities.
+        type: boolean
+        default: true
+      dependency-review:
+        description: Review dependency changes on pull requests. Requires GitHub dependency review availability.
+        type: boolean
+        default: true
+      package:
+        description: false disables distribution tests. true builds and installs wheel and sdist. A JSON object with tests supplies consumer smoke commands. Does not publish packages.
+        type: string
+        default: "false"
+      uv-version:
+        description: Pinned uv release.
+        type: string
+        default: 0.13.9
+permissions: {}
+jobs:
+  configuration:
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    permissions: {}
+    outputs:
+      versions: ${{ steps.config.outputs.versions }}
+      primary-version: ${{ steps.config.outputs.primary-version }}
+      lint: ${{ steps.config.outputs.lint }}
+      test: ${{ steps.config.outputs.test }}
+      package-enabled: ${{ steps.config.outputs.package-enabled }}
+      package-tests: ${{ steps.config.outputs.package-tests }}
+    steps:
+      - id: config
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        env:
+          VERSIONS: ${{ inputs.python-versions }}
+          LINT: ${{ inputs.lint }}
+          TEST: ${{ inputs.test }}
+          PACKAGE: ${{ inputs.package }}
+        with:
+          script: |
+            const versions = process.env.VERSIONS.trim() ? JSON.parse(process.env.VERSIONS) : [''];
+            if (!Array.isArray(versions) || !versions.length || versions.length > 20 ||
+                versions.some(version => typeof version !== 'string' || (version && !/^\d+\.\d+(?:\.\d+)?$/.test(version))) ||
+                new Set(versions).size !== versions.length) {
+              throw new Error('versions must be a nonempty JSON array of unique numeric version strings.');
+            }
+            function options(name, input, defaults) {
+              const value = input.trim();
+              if (['', 'false', 'null'].includes(value)) return null;
+              let config;
+              if (value === 'true') config = {};
+              else if (value.startsWith('{') || value.startsWith('[')) config = JSON.parse(value);
+              else config = {command: value};
+              if (!config || typeof config !== 'object' || Array.isArray(config)) throw new Error(name + ' must be a command or JSON object.');
+              const unknown = Object.keys(config).filter(key => !Object.hasOwn(defaults, key));
+              if (unknown.length) throw new Error('Unknown ' + name + ' options: ' + unknown.join(', '));
+              config = {...defaults, ...config};
+              for (const [key, value] of Object.entries(config)) {
+                if (typeof value !== typeof defaults[key]) throw new Error(name + '.' + key + ' has the wrong type.');
+              }
+              return config;
+            }
+            const lint = options('lint', process.env.LINT, {command: ''});
+            const test = options('test', process.env.TEST, {"command": "uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml", "coverage": "github"});
+            if (test && !['', 'github', 'codecov'].includes(test.coverage)) throw new Error('test.coverage must be github, codecov or empty.');
+            let pkg;
+            try { pkg = JSON.parse(process.env.PACKAGE.trim() || 'false'); }
+            catch { throw new Error('package must be true, false or an object with tests.'); }
+            if (typeof pkg !== 'boolean' && (!pkg || typeof pkg !== 'object' || Array.isArray(pkg))) throw new Error('package must be true, false or an object.');
+            const enabled = pkg !== false;
+            if (typeof pkg === 'boolean') pkg = {};
+            if (Object.keys(pkg).some(key => key !== 'tests')) throw new Error('Unknown package option.');
+            if (typeof (pkg.tests ?? '') !== 'string' || pkg.tests === null) throw new Error('package.tests must be a string.');
+            core.setOutput('package-enabled', enabled);
+            core.setOutput('package-tests', pkg.tests || '');
+            core.setOutput('versions', versions);
+            core.setOutput('primary-version', versions.at(-1));
+            core.setOutput('lint', JSON.stringify(lint));
+            core.setOutput('test', JSON.stringify(test));
+  dependency-review:
+    if: inputs.checks && inputs.dependency-review && github.event_name == 'pull_request'
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec
+  lint:
+    if: inputs.checks && needs.configuration.outputs.lint != 'null'
+    needs: configuration
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: $/actions/setup-python
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          python-version: ${{ needs.configuration.outputs.primary-version }}
+          uv-version: ${{ inputs.uv-version }}
+      - uses: $/actions/lint
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          command: ${{ fromJSON(needs.configuration.outputs.lint).command }}
+  test:
+    if: inputs.checks && needs.configuration.outputs.test != 'null'
+    needs: configuration
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: $/actions/setup-python
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          python-version: ${{ matrix.version }}
+          uv-version: ${{ inputs.uv-version }}
+      - uses: $/actions/test
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          command: ${{ fromJSON(needs.configuration.outputs.test).command }}
+          coverage: ${{ matrix.version == needs.configuration.outputs.primary-version && fromJSON(needs.configuration.outputs.test).coverage || '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJSON(needs.configuration.outputs.versions) }}
+  audit:
+    if: inputs.checks && inputs.audit
+    needs: configuration
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: $/actions/setup-python
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          python-version: ${{ needs.configuration.outputs.primary-version }}
+          uv-version: ${{ inputs.uv-version }}
+      - uses: $/actions/audit
+        with:
+          working-directory: ${{ inputs.working-directory }}
+  package:
+    if: inputs.checks && needs.configuration.outputs.package-enabled == 'true'
+    needs: configuration
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: $/actions/setup-python
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          python-version: ${{ needs.configuration.outputs.primary-version }}
+          uv-version: ${{ inputs.uv-version }}
+      - uses: $/actions/package/test
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          commands: ${{ needs.configuration.outputs.package-tests }}

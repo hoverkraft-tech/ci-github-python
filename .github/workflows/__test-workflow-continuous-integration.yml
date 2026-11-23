@@ -1,0 +1,39 @@
+name: Internal - Test continuous integration workflow
+"on":
+  workflow_call: null
+permissions: {}
+jobs:
+  configuration:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+  fixture:
+    uses: $/.github/workflows/continuous-integration.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working-directory: tests/python-project
+      python-versions: '["3.13", "3.15"]'
+      dependency-review: false
+      package: '{"tests": "python -I -c \"from ci_python_fixture import add; assert add(2, 3) == 5\""}'
+  checks-disabled:
+    uses: $/.github/workflows/continuous-integration.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      checks: false
+      working-directory: must-not-exist
+      lint: exit 99
+      test: exit 99

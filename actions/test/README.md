@@ -1,0 +1,84 @@
+<!-- header:start -->
+
+# ![Icon](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJmZWF0aGVyIGZlYXRoZXItcGFja2FnZSIgY29sb3I9ImJsdWUiPjxsaW5lIHgxPSIxNi41IiB5MT0iOS40IiB4Mj0iNy41IiB5Mj0iNC4yMSI+PC9saW5lPjxwYXRoIGQ9Ik0yMSAxNlY4YTIgMiAwIDAgMC0xLTEuNzNsLTctNGEyIDIgMCAwIDAtMiAwbC03IDRBMiAyIDAgMCAwIDMgOHY4YTIgMiAwIDAgMCAxIDEuNzNsNyA0YTIgMiAwIDAgMCAyIDBsNy00QTIgMiAwIDAgMCAyMSAxNnoiPjwvcGF0aD48cG9seWxpbmUgcG9pbnRzPSIzLjI3IDYuOTYgMTIgMTIuMDEgMjAuNzMgNi45NiI+PC9wb2x5bGluZT48bGluZSB4MT0iMTIiIHkxPSIyMi4wOCIgeDI9IjEyIiB5Mj0iMTIiPjwvbGluZT48L3N2Zz4=) GitHub Action: Test Python
+
+<!-- header:end -->
+<!-- badges:start -->
+
+[![Marketplace](https://img.shields.io/badge/Marketplace-test--python-blue?logo=github-actions)](https://github.com/marketplace/actions/test-python)
+[![Release](https://img.shields.io/github/v/release/hoverkraft-tech/ci-github-python)](https://github.com/hoverkraft-tech/ci-github-python/releases)
+[![Stars](https://img.shields.io/github/stars/hoverkraft-tech/ci-github-python?style=social)](https://img.shields.io/github/stars/hoverkraft-tech/ci-github-python?style=social)
+
+<!-- badges:end -->
+<!-- overview:start -->
+
+## Overview
+
+Run locked pytest with pytest-cov, publish JUnit and Cobertura reports, and retain them after test failures. Run setup-python first. Codecov requires id-token: write.
+
+See the [usage guide](../../docs/usage/README.md).
+
+<!-- overview:end -->
+<!-- usage:start -->
+
+## Usage
+
+```yaml
+- uses: hoverkraft-tech/ci-github-python/actions/test@f7c68ebb3ea6d60da7b6c741b2fc8fb67866cd4a # main
+  with:
+    # uv project directory.
+    # Default: `.`
+    working-directory: .
+
+    # Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting.
+    # Default: `uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml`
+    command: uv run --locked pytest --junitxml=junit.xml --cov
+      --cov-report=term-missing --cov-report=xml:cobertura.xml
+
+    # Publication only: `github`, `codecov`, or empty. Collection is controlled by command.
+    # Default: `github`
+    coverage: github
+
+    # Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.
+    report-group: ""
+```
+
+<!-- usage:end -->
+<!-- inputs:start -->
+
+## Inputs
+
+| **Input**               | **Description**                                                                                                                    | **Required** | **Default**                                                                                                  |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
+| **`working-directory`** | uv project directory.                                                                                                              | **false**    | `.`                                                                                                          |
+| **`command`**           | Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting. | **false**    | `uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml` |
+| **`coverage`**          | Publication only: `github`, `codecov`, or empty. Collection is controlled by command.                                              | **false**    | `github`                                                                                                     |
+| **`report-group`**      | Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.            | **false**    | -                                                                                                            |
+
+<!-- inputs:end -->
+<!-- secrets:start -->
+<!-- secrets:end -->
+<!-- outputs:start -->
+
+## Outputs
+
+| **Output**               | **Description**                                                 |
+| ------------------------ | --------------------------------------------------------------- |
+| **`report-artifact-id`** | Native report artifact ID. Empty when no reports were produced. |
+
+<!-- outputs:end -->
+<!-- examples:start -->
+<!-- examples:end -->
+<!-- contributing:start -->
+<!-- contributing:end -->
+<!-- security:start -->
+<!-- security:end -->
+<!-- license:start -->
+<!-- license:end -->
+<!-- generated:start -->
+
+---
+
+This documentation was automatically generated by [CI Dokumentor](https://github.com/hoverkraft-tech/ci-dokumentor).
+
+<!-- generated:end -->

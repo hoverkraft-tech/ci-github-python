@@ -1,0 +1,17 @@
+---
+name: "Pull Request - Semantic Lint"
+
+on: # zizmor: ignore[dangerous-triggers] shared workflow checks out only the trusted base revision
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+permissions: {}
+
+jobs:
+  main:
+    permissions:
+      contents: read
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/semantic-pull-request.yml@66882b24f9f13e45a6541896a5a7c638cb91c94c # 4.0.0

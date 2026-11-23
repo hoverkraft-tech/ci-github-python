@@ -1,0 +1,33 @@
+name: Internal - Common Continuous Integration tasks
+"on":
+  workflow_call: null
+permissions: {}
+jobs:
+  linter:
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/linter.yml@66882b24f9f13e45a6541896a5a7c638cb91c94c
+    permissions:
+      contents: read
+      statuses: write
+      issues: write
+      packages: read
+      pull-requests: write
+      actions: read
+      security-events: write
+    with:
+      linter-env: |
+        VALIDATE_GO=false
+        VALIDATE_GO_MODULES=false
+        VALIDATE_PYTHON_BLACK=false
+        VALIDATE_PYTHON_RUFF=false
+        VALIDATE_PYTHON_MYPY=false
+        VALIDATE_PYTHON_PYLINT=false
+        VALIDATE_PYTHON_ISORT=false
+  test:
+    uses: $/.github/workflows/__test-workflow-continuous-integration.yml
+    permissions:
+      contents: read
+      id-token: write
+  test-actions:
+    uses: $/.github/workflows/__test-actions.yml
+    permissions:
+      contents: read

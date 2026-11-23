@@ -1,0 +1,69 @@
+name: Setup Python
+description: |
+  Install Python and uv, cache downloads, and synchronize a committed uv.lock. Uses .python-version or requires-python unless an explicit version is supplied. Build backends can execute code during installation.
+
+  See the [usage guide](../../docs/usage/README.md).
+author: hoverkraft
+branding:
+  icon: package
+  color: blue
+inputs:
+  working-directory:
+    description: uv project directory inside the checkout.
+    default: .
+  python-version:
+    description: Explicit Python version. Empty uses the project's .python-version or requires-python.
+    default: ""
+  uv-version:
+    description: Pinned uv release.
+    default: 0.13.9
+  install-dependencies:
+    description: Synchronize locked dependencies and the project. Disable for tooling-only jobs.
+    default: "true"
+outputs:
+  uv-version:
+    description: Installed uv version.
+    value: ${{ steps.uv.outputs.uv-version }}
+runs:
+  using: composite
+  steps:
+    # Shared working-directory validation, kept at each standalone entry point.
+    # jscpd:ignore-start
+    - id: directory
+      uses: hoverkraft-tech/ci-github-common/actions/working-directory@66882b24f9f13e45a6541896a5a7c638cb91c94c
+      with:
+        working-directory: ${{ inputs.working-directory }}
+    # jscpd:ignore-end
+    - id: validate
+      shell: bash
+      working-directory: ${{ steps.directory.outputs.absolute-path }}
+      env:
+        INSTALL_DEPENDENCIES: ${{ inputs.install-dependencies }}
+      run: |
+        case "$INSTALL_DEPENDENCIES" in true|false) ;; *) echo 'install-dependencies must be true or false.' >&2; exit 1 ;; esac
+        test -f pyproject.toml || { echo 'Missing pyproject.toml.' >&2; exit 1; }
+        if [ "$INSTALL_DEPENDENCIES" = true ]; then
+          test -f uv.lock || { echo 'Commit uv.lock before running CI.' >&2; exit 1; }
+        fi
+    - id: uv
+      uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d
+      with:
+        version: ${{ inputs.uv-version }}
+        python-version: ${{ inputs.python-version }}
+        working-directory: ${{ steps.directory.outputs.absolute-path }}
+        enable-cache: ${{ inputs.install-dependencies }}
+        cache-dependency-glob: |
+          uv.lock
+          pyproject.toml
+          .python-version
+    - id: python
+      shell: bash
+      working-directory: ${{ steps.directory.outputs.absolute-path }}
+      run: |
+        uv python install
+    - id: install
+      shell: bash
+      if: inputs.install-dependencies == 'true'
+      working-directory: ${{ steps.directory.outputs.absolute-path }}
+      run: |
+        uv sync --locked

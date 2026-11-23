@@ -1,0 +1,22 @@
+name: Internal - Pull request - Continuous Integration
+permissions: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  ci:
+    uses: $/.github/workflows/__shared-ci.yml
+    permissions:
+      contents: read
+      statuses: write
+      issues: write
+      packages: read
+      pull-requests: write
+      actions: read
+      security-events: write
+      id-token: write
+"on":
+  merge_group: null
+  pull_request:
+    branches:
+      - main

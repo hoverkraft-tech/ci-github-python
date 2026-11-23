@@ -1,0 +1,29 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["custom.regex", "nodenv"],
+  "semanticCommits": "enabled",
+  "semanticCommitType": "build",
+  "minimumReleaseAge": "7 days",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^actions/setup-python/action\\.yml$/",
+        "/^\\.github/workflows/continuous-integration\\.yml$/"
+      ],
+      "matchStrings": [
+        "uv-version:[\\s\\S]*?default: (?<currentValue>[0-9.]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "astral-sh/uv"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^actions/audit/action\\.yml$/"],
+      "matchStrings": ["PIP_AUDIT_VERSION: (?<currentValue>[0-9.]+)"],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "pip-audit"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+name: Lint Python
+description: |
+  Run project-locked Ruff, Black and mypy. All three checks run even if one fails. Ruff SARIF reports are retained after failures. Run setup-python first.
+
+  See the [usage guide](../../docs/usage/README.md).
+author: hoverkraft
+branding:
+  icon: package
+  color: blue
+inputs:
+  working-directory:
+    description: uv project directory.
+    default: .
+  command:
+    description: Trusted Bash command replacing the default checks. Generate SARIF or Checkstyle reports for annotations.
+    default: ""
+  report-group:
+    description: Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.
+    default: ""
+outputs:
+  report-artifact-id:
+    description: Native report artifact ID. Empty when no reports were produced.
+    value: ${{ steps.upload-reports.outputs.artifact-id }}
+runs:
+  using: composite
+  steps:
+    # Shared working-directory validation, kept at each standalone entry point.
+    # jscpd:ignore-start
+    - id: directory
+      uses: hoverkraft-tech/ci-github-common/actions/working-directory@66882b24f9f13e45a6541896a5a7c638cb91c94c
+      with:
+        working-directory: ${{ inputs.working-directory }}
+    # jscpd:ignore-end
+    - id: run
+      shell: bash
+      working-directory: ${{ steps.directory.outputs.absolute-path }}
+      env:
+        COMMAND: ${{ inputs.command }}
+        CI: "true"
+      run: |
+        if [ -n "$COMMAND" ] && ! [[ "$COMMAND" =~ [^[:space:]] ]]; then
+          echo "command must not contain only whitespace." >&2
+          exit 1
+        fi
+        if [ -n "$COMMAND" ]; then
+          bash --noprofile --norc -e -u -o pipefail -c "$COMMAND"
+          exit
+        fi
+        status=0
+        uv run --locked ruff check --output-format=sarif --output-file=ruff.sarif . || status=1
+        uv run --locked black --check . || status=1
+        uv run --locked mypy . || status=1
+        exit "$status"
+    - name: Report lint results
+      id: reports
+      if: ${{ !cancelled() && steps.run.outcome != 'skipped' }}
+      uses: hoverkraft-tech/ci-github-common/actions/quality/parse-ci-reports@66882b24f9f13e45a6541896a5a7c638cb91c94c
+      with:
+        working-directory: ${{ steps.directory.outputs.absolute-path }}
+        report-paths: |-
+          auto:lint
+          !**/.venv/**
+          !**/.git/**
+          !**/.cache/**
+          !**/vendor/**
+        report-name: Python lint results
+        output-format: annotations,summary,markdown
+    # Shared native artifact contract, also used by the test action.
+    # jscpd:ignore-start
+    - id: report-artifact
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+      if: ${{ !cancelled() && steps.run.outcome != 'skipped' }}
+      env:
+        DIRECTORY: ${{ steps.directory.outputs.absolute-path }}
+        REPORT_FILES: ${{ steps.reports.outputs.parsed-files }}
+        REPORT_GROUP: ${{ inputs.report-group || github.job }}
+        NATIVE_COVERAGE: "false"
+      with:
+        script: |
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const files = JSON.parse(process.env.REPORT_FILES || '[]');
+          if (process.env.NATIVE_COVERAGE === 'true') {
+            const coverage = path.join(process.env.DIRECTORY, 'coverage.out');
+            if (fs.existsSync(coverage)) files.push(coverage);
+          }
+          if (!files.length) return;
+          const group = process.env.REPORT_GROUP;
+          if (!/^[\w-]+$/.test(group)) throw new Error('report-group must be a job ID.');
+          core.setOutput('files', files.join('\n'));
+          core.setOutput('name', `ci-reports-${process.env.GITHUB_RUN_ATTEMPT}-${group}-${require('node:crypto').randomUUID()}`);
+    - id: upload-reports
+      name: Retain native reports
+      if: ${{ !cancelled() && steps.report-artifact.outputs.files != '' }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: ${{ steps.report-artifact.outputs.name }}
+        path: ${{ steps.report-artifact.outputs.files }}
+        include-hidden-files: true
+        if-no-files-found: error
+        retention-days: 7
+  # jscpd:ignore-end

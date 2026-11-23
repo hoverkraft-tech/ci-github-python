@@ -1,0 +1,62 @@
+name: Test Python distribution
+description: |
+  Build a wheel and source distribution without local uv sources, then install each in its own clean environment outside the checkout. Does not publish. Run setup-python first.
+
+  See the [usage guide](../../../docs/usage/README.md).
+author: hoverkraft
+branding:
+  icon: package
+  color: blue
+inputs:
+  working-directory:
+    description: uv package directory with a build-system.
+    default: .
+  commands:
+    description: Optional trusted Bash smoke tests run separately against the installed wheel and sdist. The consumer venv is on PATH; PACKAGE_NAME and PACKAGE_VERSION identify the distribution. Source checkout is not the working directory.
+    default: ""
+runs:
+  using: composite
+  steps:
+    # Shared working-directory validation, kept at each standalone entry point.
+    # jscpd:ignore-start
+    - id: directory
+      uses: hoverkraft-tech/ci-github-common/actions/working-directory@66882b24f9f13e45a6541896a5a7c638cb91c94c
+      with:
+        working-directory: ${{ inputs.working-directory }}
+    # jscpd:ignore-end
+    - id: package
+      shell: bash
+      working-directory: ${{ steps.directory.outputs.absolute-path }}
+      env:
+        COMMANDS: ${{ inputs.commands }}
+      run: |
+        scratch=$(mktemp -d "$RUNNER_TEMP/python-package.XXXXXX")
+        trap 'rm -rf "$scratch"' EXIT
+        uv lock --check
+        uv build --no-sources --out-dir "$scratch/dist"
+        metadata=$(uv run --locked python -c 'import json,tomllib; p=tomllib.load(open("pyproject.toml","rb")); assert "build-system" in p, "Declare build-system"; print(json.dumps(p["project"]["name"]))')
+        PACKAGE_NAME=$(uv run --locked python -c 'import json,sys; print(json.loads(sys.argv[1]))' "$metadata")
+        export PACKAGE_NAME
+        shopt -s nullglob
+        wheels=("$scratch"/dist/*.whl)
+        sources=("$scratch"/dist/*.tar.gz)
+        if [ "${#wheels[@]}" -ne 1 ] || [ "${#sources[@]}" -ne 1 ]; then
+          echo 'Expected exactly one wheel and one source distribution.' >&2
+          exit 1
+        fi
+        for artifact in "${wheels[0]}" "${sources[0]}"; do
+          consumer=$(mktemp -d "$scratch/consumer.XXXXXX")
+          uv venv "$consumer/.venv"
+          uv pip install --python "$consumer/.venv/bin/python" "$artifact"
+          uv pip check --python "$consumer/.venv/bin/python"
+          (
+            cd "$consumer"
+            unset PYTHONPATH PYTHONHOME VIRTUAL_ENV UV_PROJECT_ENVIRONMENT
+            export PATH="$consumer/.venv/bin:$PATH"
+            PACKAGE_VERSION=$(python -I -c 'import importlib.metadata,os; print(importlib.metadata.version(os.environ["PACKAGE_NAME"]))')
+            export PACKAGE_VERSION
+            if [ -n "$COMMANDS" ]; then
+              bash --noprofile --norc -e -u -o pipefail -c "$COMMANDS"
+            fi
+          )
+        done

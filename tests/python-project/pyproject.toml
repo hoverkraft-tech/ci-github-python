@@ -1,0 +1,37 @@
+[project]
+name = "ci-python-fixture"
+version = "0.1.0"
+description = "Fixture for the Hoverkraft Python CI actions"
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["hatchling==1.33.0"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+  "black==26.10.1",
+  "mypy==2.4.1",
+  "pytest==9.2.0",
+  "pytest-cov==7.1.0",
+  "ruff==0.17.6",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ci_python_fixture"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"
+
+[tool.coverage.run]
+source = ["ci_python_fixture"]
+branch = true
+relative_files = true
+
+[tool.mypy]
+strict = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

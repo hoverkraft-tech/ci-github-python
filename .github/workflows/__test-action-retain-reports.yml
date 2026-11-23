@@ -9,6 +9,8 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
+    outputs:
+      artifact-id: ${{ steps.report.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -37,10 +39,17 @@ jobs:
           directory: ${{ runner.temp }}/report-fixture
           group: reports
           report-paths: junit.xml
+  verify:
+    needs: reports
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
       - name: Assert - Artifact can be downloaded
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
-          artifact-ids: ${{ steps.report.outputs.artifact-id }}
+          artifact-ids: ${{ needs.reports.outputs.artifact-id }}
           path: ${{ runner.temp }}/downloaded-reports
       - name: Assert - Only the selected file was retained
         run: |

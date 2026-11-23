@@ -35,6 +35,7 @@ target-version = ["py313"]
 
 [tool.mypy]
 strict = true
+mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

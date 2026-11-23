@@ -9,6 +9,8 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+    outputs:
+      artifact-id: ${{ steps.failed-test.outputs.report-artifact-id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -46,9 +48,16 @@ jobs:
             assert.ok(process.env.SUCCESS_ARTIFACT, 'Successful tests retain reports');
             assert.ok(process.env.FAILURE_ARTIFACT, 'Failed tests retain reports');
             assert.notEqual(process.env.SUCCESS_ARTIFACT, process.env.FAILURE_ARTIFACT);
+  verify:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
-          artifact-ids: ${{ steps.failed-test.outputs.report-artifact-id }}
+          artifact-ids: ${{ needs.test.outputs.artifact-id }}
           path: ${{ runner.temp }}/failed-reports
       - name: Verify retained failure report
         shell: bash

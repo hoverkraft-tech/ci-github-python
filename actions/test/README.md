@@ -14,9 +14,38 @@
 
 ## Overview
 
-Run locked pytest with pytest-cov, publish JUnit and Cobertura reports, and retain them after test failures. Run setup-python first. Codecov requires id-token: write.
+Run project-locked pytest with JUnit and Cobertura coverage.
 
-See the [usage guide](../../docs/usage/README.md).
+Declare pytest and pytest-cov in the default uv dependency groups. Configure
+coverage sources in `[tool.coverage.run]` to avoid measuring unrelated code.
+A trusted Bash `command` replaces the default and must produce JUnit for test
+reporting and `cobertura.xml` for coverage. The common parser handles both formats.
+
+Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
+This action reuses the installed environment. Use the same reviewed commit SHA
+for both actions. Do not populate command inputs from untrusted pull request text.
+
+```yaml
+- uses: hoverkraft-tech/ci-github-python/actions/test@main
+  with:
+    working-directory: .
+```
+
+### Reports
+
+Native reports are retained for seven days, including after command failures.
+Only report files are uploaded, with unique names for parallel calls. When no
+reports are produced, `report-artifact-id` is empty. GitHub summaries and
+annotations need only `contents: read`; individual PR comments are not created.
+Use the common [ci-reports workflow](https://github.com/hoverkraft-tech/ci-github-common/blob/main/.github/workflows/ci-reports.yml)
+for consolidated comments and set `report-group` to the outer calling job ID.
+
+`coverage: "github"` is the default. Set `coverage: "codecov"` and grant the
+job `id-token: write` for OIDC upload of `cobertura.xml`. An empty coverage
+value disables publication while retaining JUnit; collection is controlled by
+the command. Custom commands must produce the applicable report files.
+
+See the [continuous integration workflow](../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -24,7 +53,7 @@ See the [usage guide](../../docs/usage/README.md).
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/test@21adde808aee6de52659796134d3d6c58759aac0 # main
+- uses: hoverkraft-tech/ci-github-python/actions/test@0efcccef629a5715a6dff199a1b45add8eb5b397 # main
   with:
     # uv project directory.
     # Default: `.`

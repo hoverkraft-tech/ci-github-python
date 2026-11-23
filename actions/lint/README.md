@@ -14,9 +14,33 @@
 
 ## Overview
 
-Run project-locked Ruff, Black and mypy. All three checks run even if one fails. Ruff SARIF reports are retained after failures. Run setup-python first.
+Run project-locked Ruff, Black and mypy.
 
-See the [usage guide](../../docs/usage/README.md).
+Declare all three in the default uv dependency groups and configure them in
+`pyproject.toml`. Ruff emits SARIF, Black checks formatting and mypy checks types.
+All three execute even after one fails. A trusted Bash `command` replaces defaults;
+emit SARIF or Checkstyle to retain annotations from custom checks.
+
+Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
+This action reuses the installed environment. Use the same reviewed commit SHA
+for both actions. Do not populate command inputs from untrusted pull request text.
+
+```yaml
+- uses: hoverkraft-tech/ci-github-python/actions/lint@main
+  with:
+    working-directory: .
+```
+
+### Reports
+
+Native reports are retained for seven days, including after command failures.
+Only report files are uploaded, with unique names for parallel calls. When no
+reports are produced, `report-artifact-id` is empty. GitHub summaries and
+annotations need only `contents: read`; individual PR comments are not created.
+Use the common [ci-reports workflow](https://github.com/hoverkraft-tech/ci-github-common/blob/main/.github/workflows/ci-reports.yml)
+for consolidated comments and set `report-group` to the outer calling job ID.
+
+See the [continuous integration workflow](../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -24,7 +48,7 @@ See the [usage guide](../../docs/usage/README.md).
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/lint@21adde808aee6de52659796134d3d6c58759aac0 # main
+- uses: hoverkraft-tech/ci-github-python/actions/lint@0efcccef629a5715a6dff199a1b45add8eb5b397 # main
   with:
     # uv project directory.
     # Default: `.`

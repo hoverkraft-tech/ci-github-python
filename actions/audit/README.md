@@ -14,9 +14,26 @@
 
 ## Overview
 
-Audit locked production dependencies with pip-audit. Excludes the project and development groups. The selected Python environment is exported from uv.lock; vulnerability lookup requires network access.
+Audit locked production dependencies with pip-audit.
 
-See the [usage guide](../../docs/usage/README.md).
+The action exports the selected environment from `uv.lock` with hashes and
+audits it with `pip-audit --require-hashes --disable-pip`. Development groups
+and the project itself are excluded. Registry dependencies with hashes are
+supported; direct VCS or editable dependencies may require a project-specific
+audit workflow. Vulnerability lookup requires network access and scanner failures
+fail the action. Dependency metadata is not rewritten.
+
+Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
+This action reuses the installed environment. Use the same reviewed commit SHA
+for both actions. Do not populate command inputs from untrusted pull request text.
+
+```yaml
+- uses: hoverkraft-tech/ci-github-python/actions/audit@main
+  with:
+    working-directory: .
+```
+
+See the [continuous integration workflow](../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -24,7 +41,7 @@ See the [usage guide](../../docs/usage/README.md).
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/audit@21adde808aee6de52659796134d3d6c58759aac0 # main
+- uses: hoverkraft-tech/ci-github-python/actions/audit@0efcccef629a5715a6dff199a1b45add8eb5b397 # main
   with:
     # uv project directory.
     # Default: `.`

@@ -1,5 +1,7 @@
 # CI GitHub Python
 
+<img src=".github/logo.svg" width="120" alt="CI GitHub Python logo" />
+
 Opinionated GitHub Actions and reusable workflows for Python projects,
 following the conventions of [ci-github-nodejs](https://github.com/hoverkraft-tech/ci-github-nodejs)
 and [ci-github-php](https://github.com/hoverkraft-tech/ci-github-php).
@@ -42,7 +44,6 @@ actions with GitHub reporting require only `contents: read`.
 
 ## Documentation
 
-- [Usage and configuration](docs/usage/README.md)
 - [Workflow reference](.github/workflows/continuous-integration.md)
 - [Contributing](CONTRIBUTING.md)
 - [Documentation index](docs/README.md)

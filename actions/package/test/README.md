@@ -14,9 +14,32 @@
 
 ## Overview
 
-Build a wheel and source distribution without local uv sources, then install each in its own clean environment outside the checkout. Does not publish. Run setup-python first.
+Build and test a wheel and source distribution in clean consumers.
 
-See the [usage guide](../../../docs/usage/README.md).
+Declare `build-system` in `pyproject.toml` and pin its backend in
+`build-system.requires`. The action runs `uv build --no-sources`, installs the
+wheel and sdist independently in temporary venvs, checks dependencies and runs
+the supplied `commands` outside the source checkout.
+
+`PACKAGE_NAME`, `PACKAGE_VERSION` and the consumer venv's `PATH` are available
+to the trusted Bash smoke tests. For example, use `python -I -c "import my_package"`
+to check the installed distribution. Command failures fail the action.
+Temporary environments are cleaned after success or failure. Build backends
+execute code; there is no general equivalent to npm's `ignore-scripts` switch.
+The action does not publish to PyPI. Enable it in the reusable workflow with
+`package: "true"` or a JSON object containing `tests`.
+
+Run [setup-python](../../setup-python/README.md) first with the same `working-directory`.
+This action reuses the installed environment. Use the same reviewed commit SHA
+for both actions. Do not populate command inputs from untrusted pull request text.
+
+```yaml
+- uses: hoverkraft-tech/ci-github-python/actions/package/test@main
+  with:
+    working-directory: .
+```
+
+See the [continuous integration workflow](../../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -24,7 +47,7 @@ See the [usage guide](../../../docs/usage/README.md).
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/package/test@21adde808aee6de52659796134d3d6c58759aac0 # main
+- uses: hoverkraft-tech/ci-github-python/actions/package/test@0efcccef629a5715a6dff199a1b45add8eb5b397 # main
   with:
     # uv package directory with a build-system.
     # Default: `.`

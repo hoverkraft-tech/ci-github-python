@@ -1,9 +1,9 @@
-name: Internal - Test standalone actions
+name: Internal - Test test action
 "on":
   workflow_call: null
 permissions: {}
 jobs:
-  actions:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -12,13 +12,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+        name: Arrange - Check out the repository
       - uses: $/actions/setup-python
         with:
           working-directory: tests/python-project
+        name: Arrange - Install dependencies
       - id: test
         uses: $/actions/test
         with:
           working-directory: tests/python-project
+        name: Act - Run default tests
       - id: failed-test
         continue-on-error: true
         uses: $/actions/test
@@ -28,24 +31,17 @@ jobs:
             printf '%s' '<testsuites tests="1" failures="1"><testsuite name="failure" tests="1" failures="1"><testcase name="fails"><failure message="expected">failure</failure></testcase></testsuite></testsuites>' > junit.xml
             exit 17
           coverage: ""
-      - id: failed-lint
-        continue-on-error: true
-        uses: $/actions/lint
-        with:
-          working-directory: tests/python-project
-          command: exit 23
+        name: Act - Run a failing test command
       - name: Assert failures and reports
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
         env:
           SUCCESS_ARTIFACT: ${{ steps.test.outputs.report-artifact-id }}
           FAILURE_ARTIFACT: ${{ steps.failed-test.outputs.report-artifact-id }}
           TEST_OUTCOME: ${{ steps.failed-test.outcome }}
-          LINT_OUTCOME: ${{ steps.failed-lint.outcome }}
         with:
           script: |
             const assert = require('node:assert/strict');
             assert.equal(process.env.TEST_OUTCOME, 'failure');
-            assert.equal(process.env.LINT_OUTCOME, 'failure');
             assert.ok(process.env.SUCCESS_ARTIFACT, 'Successful tests retain reports');
             assert.ok(process.env.FAILURE_ARTIFACT, 'Failed tests retain reports');
             assert.notEqual(process.env.SUCCESS_ARTIFACT, process.env.FAILURE_ARTIFACT);

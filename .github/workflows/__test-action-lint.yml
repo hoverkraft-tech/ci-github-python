@@ -1,0 +1,52 @@
+name: Internal - Test lint action
+"on":
+  workflow_call: null
+permissions: {}
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Arrange - Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Arrange - Install the project runtime and dependencies
+        uses: $/actions/setup-python
+        with:
+          working-directory: tests/python-project
+      - name: Act - Run the default lint checks
+        uses: $/actions/lint
+        with:
+          working-directory: tests/python-project
+      - name: Act - Retain diagnostics from a failing command
+        uses: $/actions/lint
+        with:
+          working-directory: tests/python-project
+          command: |
+            printf '%s\n' '<checkstyle version="4.3"><file name="fixture"><error line="1" severity="error" message="expected lint failure" source="fixture"/></file></checkstyle>' > checkstyle.xml
+            exit 23
+        id: failed-lint
+        continue-on-error: true
+      - name: Assert - Failure propagates and reports survive
+        shell: bash
+        run: |
+          test "$OUTCOME" = failure
+          test -n "$ARTIFACT"
+        env:
+          OUTCOME: ${{ steps.failed-lint.outcome }}
+          ARTIFACT: ${{ steps.failed-lint.outputs.report-artifact-id }}
+      - name: Assert - Download retained lint reports
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          artifact-ids: ${{ steps.failed-lint.outputs.report-artifact-id }}
+          path: ${{ runner.temp }}/lint-reports
+      - name: Assert - Retained report contains the diagnostic
+        shell: bash
+        run: |
+          test -f "$REPORT_DIRECTORY/checkstyle.xml"
+          grep -q 'message="expected lint failure"' "$REPORT_DIRECTORY/checkstyle.xml"
+        env:
+          REPORT_DIRECTORY: ${{ runner.temp }}/lint-reports

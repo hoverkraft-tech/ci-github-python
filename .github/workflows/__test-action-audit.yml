@@ -1,0 +1,26 @@
+name: Internal - Test audit action
+"on":
+  workflow_call: null
+permissions: {}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Arrange - Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Arrange - Install the project runtime and dependencies
+        uses: $/actions/setup-python
+        with:
+          working-directory: tests/python-project
+      - name: Act - Audit project dependencies
+        uses: $/actions/audit
+        with:
+          working-directory: tests/python-project
+      - name: Assert - Dependency metadata is unchanged
+        shell: bash
+        run: git diff --exit-code -- tests/python-project/pyproject.toml tests/python-project/uv.lock

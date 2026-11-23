@@ -14,9 +14,41 @@
 
 ## Overview
 
-Install Python and uv, cache downloads, and synchronize a committed uv.lock. Uses .python-version or requires-python unless an explicit version is supplied. Build backends can execute code during installation.
+Install Python and uv, cache downloads and synchronize locked dependencies.
 
-See the [usage guide](../../docs/usage/README.md).
+Use a uv project with committed `pyproject.toml`, `uv.lock` and preferably
+`.python-version`. Explicit `python-version` takes precedence; otherwise uv
+selects from `.python-version` and `requires-python`.
+
+Setup runs `uv sync --locked`: missing or stale locks fail instead of being
+rewritten. It installs uv's default dependency groups; optional extras require
+caller configuration. Configure `[tool.uv].default-groups` for additional groups.
+Declare Ruff, Black, mypy, pytest and pytest-cov in these groups to use the default
+lint and test actions. The [fixture](../../tests/python-project/pyproject.toml)
+shows a typed `src/` package with project-owned tool configuration.
+
+Set `install-dependencies: "false"` for runtime-only jobs or caller-managed
+dependencies; `pyproject.toml` is still required. Working directories must stay
+inside the checkout. Build backends execute code during installation; Python
+has no general equivalent to npm's `ignore-scripts` switch.
+
+### Standalone setup
+
+Check out the project before setup. Use a Linux runner supporting Node.js 24
+actions and pin all actions from this repository to the same reviewed commit.
+Later lint, test and audit actions reuse this environment.
+
+```yaml
+steps:
+  - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    with:
+      persist-credentials: false
+  - uses: hoverkraft-tech/ci-github-python/actions/setup-python@main
+    with:
+      working-directory: .
+```
+
+See the [continuous integration workflow](../../.github/workflows/continuous-integration.md) for orchestration and version matrices.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -24,7 +56,7 @@ See the [usage guide](../../docs/usage/README.md).
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/setup-python@21adde808aee6de52659796134d3d6c58759aac0 # main
+- uses: hoverkraft-tech/ci-github-python/actions/setup-python@0efcccef629a5715a6dff199a1b45add8eb5b397 # main
   with:
     # uv project directory inside the checkout.
     # Default: `.`

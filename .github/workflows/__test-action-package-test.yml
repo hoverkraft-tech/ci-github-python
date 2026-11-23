@@ -1,0 +1,52 @@
+name: Internal - Test package/test action
+"on":
+  workflow_call: null
+permissions: {}
+jobs:
+  package-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Arrange - Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Arrange - Install the project runtime and dependencies
+        uses: $/actions/setup-python
+        with:
+          working-directory: tests/python-project
+      - name: Act - Test wheel and sdist in separate consumers
+        uses: $/actions/package/test
+        with:
+          working-directory: tests/python-project
+          commands: |
+            python -I - <<'PY'
+            import importlib.metadata
+            import os
+            from pathlib import Path
+            import ci_python_fixture
+
+            assert ci_python_fixture.add(2, 3) == 5
+            assert importlib.metadata.version(os.environ["PACKAGE_NAME"]) == os.environ["PACKAGE_VERSION"]
+            assert not Path.cwd().is_relative_to(os.environ["GITHUB_WORKSPACE"])
+            assert not Path(ci_python_fixture.__file__).is_relative_to(os.environ["GITHUB_WORKSPACE"])
+            with (Path(os.environ["RUNNER_TEMP"]) / "tested-consumers.txt").open("a") as result:
+                result.write(str(Path.cwd()) + "\n")
+            PY
+      - name: Assert - Both distributions used distinct consumers
+        shell: bash
+        run: test "$(sort -u "$RUNNER_TEMP/tested-consumers.txt" | wc -l)" -eq 2
+      - name: Act - Propagate a consumer test failure
+        uses: $/actions/package/test
+        with:
+          working-directory: tests/python-project
+          commands: exit 19
+        id: failed-package
+        continue-on-error: true
+      - name: Assert - Failed smoke test fails the action
+        shell: bash
+        run: test "$OUTCOME" = failure
+        env:
+          OUTCOME: ${{ steps.failed-package.outcome }}

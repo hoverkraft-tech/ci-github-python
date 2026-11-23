@@ -1,0 +1,48 @@
+name: Internal - Test setup-python action
+"on":
+  workflow_call: null
+permissions: {}
+jobs:
+  setup-python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Arrange - Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Act - Detect the runtime and install dependencies
+        uses: $/actions/setup-python
+        with:
+          working-directory: tests/python-project
+        id: setup
+      - name: Assert - Locked development environment is installed
+        shell: bash
+        run: |
+          test "$(uv --version)" = "uv $UV_VERSION"
+          test -x tests/python-project/.venv/bin/python
+          tests/python-project/.venv/bin/python -c 'import pytest, ci_python_fixture'
+          git diff --exit-code -- tests/python-project/pyproject.toml tests/python-project/uv.lock
+        env:
+          UV_VERSION: ${{ steps.setup.outputs.uv-version }}
+      - name: Arrange - Project without a lock or environment
+        shell: bash
+        run: |
+          mkdir .test-python-runtime
+          cp tests/python-project/pyproject.toml tests/python-project/.python-version .test-python-runtime/
+      - name: Act - Select a runtime without dependencies
+        uses: $/actions/setup-python
+        with:
+          working-directory: .test-python-runtime
+          python-version: "3.13"
+          install-dependencies: "false"
+      - name: Assert - Explicit version wins without synchronizing
+        shell: bash
+        run: |
+          python_path=$(uv python find)
+          "$python_path" -c 'import sys; assert sys.version_info[:2] == (3, 13)'
+          test ! -d .venv
+          test ! -f uv.lock
+        working-directory: .test-python-runtime

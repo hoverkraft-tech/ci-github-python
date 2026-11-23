@@ -27,7 +27,23 @@ jobs:
     permissions:
       contents: read
       id-token: write
-  test-actions:
-    uses: $/.github/workflows/__test-actions.yml
+  test-action-setup-python:
+    uses: $/.github/workflows/__test-action-setup-python.yml
+    permissions:
+      contents: read
+  test-action-lint:
+    uses: $/.github/workflows/__test-action-lint.yml
+    permissions:
+      contents: read
+  test-action-test:
+    uses: $/.github/workflows/__test-action-test.yml
+    permissions:
+      contents: read
+  test-action-audit:
+    uses: $/.github/workflows/__test-action-audit.yml
+    permissions:
+      contents: read
+  test-action-package-test:
+    uses: $/.github/workflows/__test-action-package-test.yml
     permissions:
       contents: read

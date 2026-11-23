@@ -24,8 +24,9 @@ command wrappers to detect quoting and failure-propagation bugs, validate setup
 preconditions and check artifact selection. They do not mock language tools.
 
 `__test-workflow-continuous-integration.yml` calls the public workflow with real
-fixture versions and checks disabled behavior. `__test-actions.yml` exercises
-standalone setup, tests, deliberate failures and retrieval of failed-test reports.
+fixture versions and checks disabled behavior. Each action has a dedicated
+`__test-action-*.yml` workflow, called by `__shared-ci.yml`. These cover standalone
+setup, default commands, failure propagation and retrieval of retained reports.
 These GitHub runner/artifact boundaries cannot be covered by local unit tests.
 The fixture is deliberately small; it validates action wiring rather than the
 language's arithmetic implementation.
@@ -35,7 +36,9 @@ language's arithmetic implementation.
 Edit action metadata or workflow header comments, then run `make docs`.
 This uses the same CI Dokumentor release as the shared `release-actions.yml`
 workflow. Never edit generated action readmes or workflow reference files by hand.
-Detailed usage belongs in `docs/usage/`; contributor procedures belong here.
+Usage belongs directly in generated action and workflow readmes. Put source
+guidance in action descriptions and workflow header comments so `make docs`
+preserves it. Contributor procedures belong here.
 
 ## Maintenance and releases
 
@@ -53,3 +56,16 @@ are gated on the client ID. Public CI needs none of these credentials.
 The release automation versions this Actions repository. It does not publish
 consumer libraries or application binaries. Configure consumer publishing in
 the consumer repository using its registry and release policy.
+
+## Branding
+
+The SVG assets use the [Hoverkraft project badge](https://github.com/hoverkraft-tech/branding/tree/main/brand/identity)
+and [Inter](https://github.com/rsms/inter). Text is outlined so rendering does
+not depend on installed fonts. `.github/logo.svg` is the compact badge;
+`.github/social-preview.svg` is the source for the 1280 x 640 PNG preview.
+After changing the SVG, export the PNG at those dimensions and inspect both.
+The Python mark comes from the [Python Software Foundation](https://www.python.org/community/logos/)
+and retains its original colors and proportions.
+
+Duplication checks exclude generated references, self-contained usage descriptions
+and the shared SVG artwork. Executable workflow steps remain checked.

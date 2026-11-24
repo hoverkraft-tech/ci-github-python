@@ -27,7 +27,7 @@ description: |
 
   ```yaml
   steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
     - uses: hoverkraft-tech/ci-github-python/actions/setup-python@main
@@ -66,7 +66,7 @@ runs:
   using: composite
   steps:
     - id: directory
-      uses: hoverkraft-tech/ci-github-common/actions/working-directory@d606f77fad305ef07dfde3db5270f5e324019c97
+      uses: hoverkraft-tech/ci-github-common/actions/working-directory@d606f77fad305ef07dfde3db5270f5e324019c97 # 4.2.4
       with:
         working-directory: ${{ inputs.working-directory }}
     - id: validate
@@ -81,7 +81,7 @@ runs:
           test -f uv.lock || { echo 'Commit uv.lock before running CI.' >&2; exit 1; }
         fi
     - id: uv
-      uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d
+      uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
       with:
         version: ${{ inputs.uv-version }}
         python-version: ${{ inputs.python-version }}

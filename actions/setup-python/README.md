@@ -55,7 +55,7 @@ Later lint, test and audit actions reuse this environment.
 
 ```yaml
 steps:
-  - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+  - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     with:
       persist-credentials: false
   - uses: hoverkraft-tech/ci-github-python/actions/setup-python@main
@@ -80,7 +80,7 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/setup-python@b54ee767d7525a8132452198bdba98ed05108331 # main
+- uses: hoverkraft-tech/ci-github-python/actions/setup-python@5f7a722eca203764bf066c1272fc85bc4700d35c # dependabot/github_actions/github-actions-dependencies-0daf74fb81
   with:
     # uv project directory inside the checkout.
     # Default: `.`

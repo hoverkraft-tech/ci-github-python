@@ -77,7 +77,9 @@ Set `GITHUB_TOKEN` when authentication is required or anonymous API limits are r
 
 ## Maintenance and releases
 
-External actions are pinned to immutable commits. Dependabot updates actions,
+External actions and reusable workflows are pinned to full commit SHAs with
+the exact matching release tag in an inline comment. Verify each tag resolves
+to its pinned commit before changing either value. Dependabot updates actions,
 Docker, npm validation dependencies and the language fixture. Renovate updates
 embedded tool versions and the Node version file. Release changes use Conventional
 Commits and the shared `ci-github-publish` preparation, planning, creation and

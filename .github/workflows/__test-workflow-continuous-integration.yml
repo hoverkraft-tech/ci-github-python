@@ -17,7 +17,8 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm test
+      - name: Assert - Workflow configuration tests pass
+        run: node --test tests/*.test.cjs
   fixture:
     uses: $/.github/workflows/continuous-integration.yml
     permissions:

@@ -16,6 +16,15 @@ jobs:
         with:
           persist-credentials: false
         name: Arrange - Check out the repository
+      - name: Arrange - Install the contract test runtime
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Arrange - Install contract test dependencies
+        run: npm ci --ignore-scripts
+      - name: Assert - Action contract tests pass
+        run: node --test actions/test/action.test.cjs
       - uses: $/actions/setup-python
         with:
           working-directory: tests/python-project

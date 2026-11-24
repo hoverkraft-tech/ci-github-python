@@ -55,6 +55,9 @@ commands, failure propagation and retrieval of retained reports.
 `__test-workflow-continuous-integration.yml` runs only the workflow configuration
 Node tests and calls the public workflow with real fixture versions and checks
 disabled behavior. `__shared-ci.yml` calls all these test workflows.
+The [`ci-github-nodejs` test action](https://github.com/hoverkraft-tech/ci-github-nodejs/tree/main/actions/test)
+handles Node setup and dependency caching, installs locked dependencies with
+lifecycle scripts disabled, and runs `test:ci` with the suite path from `arguments`.
 These GitHub runner/artifact boundaries cannot be covered by local unit tests.
 The fixture is deliberately small; it validates action wiring rather than the
 language's arithmetic implementation.

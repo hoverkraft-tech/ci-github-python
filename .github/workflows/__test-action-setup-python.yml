@@ -14,15 +14,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - name: Arrange - Install the contract test runtime
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
-        with:
-          node-version-file: .node-version
-          cache: npm
-      - name: Arrange - Install contract test dependencies
-        run: npm ci --ignore-scripts
       - name: Assert - Action contract tests pass
-        run: node --test actions/setup-python/action.test.cjs
+        uses: hoverkraft-tech/ci-github-nodejs/actions/test@98d91b1cc347efc64cd5fb20bc0ebc076acad114 # 3.1.0
+        with:
+          command: test:ci
+          arguments: '["actions/setup-python/action.test.cjs"]'
+          coverage: ""
+          comment: "false"
       - name: Act - Detect the runtime and install dependencies
         uses: $/actions/setup-python
         with:

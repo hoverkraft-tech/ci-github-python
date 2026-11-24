@@ -39,7 +39,7 @@ runs:
   using: composite
   steps:
     - id: directory
-      uses: hoverkraft-tech/ci-github-common/actions/working-directory@66882b24f9f13e45a6541896a5a7c638cb91c94c # 4.0.0
+      uses: hoverkraft-tech/ci-github-common/actions/working-directory@af0bdd6313bd49aaf4a8a7f0de005fb0db856b03 # 4.3.3
       with:
         working-directory: ${{ inputs.working-directory }}
     - id: package

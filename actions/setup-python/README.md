@@ -80,7 +80,7 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/setup-python@f9227d0f443be4edbb7aacfc0701caaf25523f77 # fix/enforce-lint-checks
+- uses: hoverkraft-tech/ci-github-python/actions/setup-python@b54ee767d7525a8132452198bdba98ed05108331 # main
   with:
     # uv project directory inside the checkout.
     # Default: `.`

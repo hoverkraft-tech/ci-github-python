@@ -63,7 +63,7 @@ See the [continuous integration workflow](../../../.github/workflows/continuous-
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/package/test@f9227d0f443be4edbb7aacfc0701caaf25523f77 # fix/enforce-lint-checks
+- uses: hoverkraft-tech/ci-github-python/actions/package/test@b54ee767d7525a8132452198bdba98ed05108331 # main
   with:
     # uv package directory with a build-system.
     # Default: `.`

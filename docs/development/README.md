@@ -49,10 +49,12 @@ They execute the actual Bash and JavaScript from adjacent action metadata to
 check quoting, failure propagation, setup preconditions and artifact selection.
 `make test` discovers these files and the workflow configuration tests.
 
-`__test-workflow-continuous-integration.yml` calls the public workflow with real
-fixture versions and checks disabled behavior. Each action has a dedicated
-`__test-action-*.yml` workflow, called by `__shared-ci.yml`. These cover standalone
-setup, default commands, failure propagation and retrieval of retained reports.
+In CI, each action's `action.test.cjs` runs in its dedicated
+`__test-action-*.yml` workflow, alongside checks for standalone setup, default
+commands, failure propagation and retrieval of retained reports.
+`__test-workflow-continuous-integration.yml` runs only the workflow configuration
+Node tests and calls the public workflow with real fixture versions and checks
+disabled behavior. `__shared-ci.yml` calls all these test workflows.
 These GitHub runner/artifact boundaries cannot be covered by local unit tests.
 The fixture is deliberately small; it validates action wiring rather than the
 language's arithmetic implementation.

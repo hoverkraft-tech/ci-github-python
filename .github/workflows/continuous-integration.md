@@ -149,7 +149,7 @@ on:
 permissions: {}
 jobs:
   continuous-integration:
-    uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@5f7a722eca203764bf066c1272fc85bc4700d35c # dependabot/github_actions/github-actions-dependencies-0daf74fb81
+    uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@244c9508c64e31d1a87327cc9ed07a13c235c454 # main
     permissions:
       contents: read
       id-token: write

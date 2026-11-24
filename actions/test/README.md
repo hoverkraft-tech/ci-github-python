@@ -66,7 +66,7 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/test@244c9508c64e31d1a87327cc9ed07a13c235c454 # main
+- uses: hoverkraft-tech/ci-github-python/actions/test@8fff11508ac0ee0064b432eea089a7bba4be702e # fix/artifact-discovery
   with:
     # uv project directory.
     # Default: `.`

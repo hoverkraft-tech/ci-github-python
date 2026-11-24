@@ -25,7 +25,7 @@ runs:
   steps:
     - id: parse
       if: ${{ !cancelled() }}
-      uses: hoverkraft-tech/ci-github-common/actions/quality/parse-ci-reports@66882b24f9f13e45a6541896a5a7c638cb91c94c # 4.0.0
+      uses: hoverkraft-tech/ci-github-common/actions/quality/parse-ci-reports@af0bdd6313bd49aaf4a8a7f0de005fb0db856b03 # 4.3.3
       with:
         working-directory: ${{ inputs.directory }}
         report-paths: |

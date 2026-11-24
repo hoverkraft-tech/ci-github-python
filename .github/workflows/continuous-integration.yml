@@ -155,7 +155,7 @@ jobs:
       package-tests: ${{ steps.config.outputs.package-tests }}
     steps:
       - id: config
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           VERSIONS: ${{ inputs.python-versions }}
           LINT: ${{ inputs.lint }}
@@ -209,10 +209,10 @@ jobs:
       contents: read
     steps:
       - &checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec
+      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
   lint:
     if: inputs.checks && needs.configuration.outputs.lint != 'null'
     needs: configuration

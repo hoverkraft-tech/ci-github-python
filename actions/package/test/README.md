@@ -63,7 +63,7 @@ See the [continuous integration workflow](../../../.github/workflows/continuous-
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/package/test@8fff11508ac0ee0064b432eea089a7bba4be702e # fix/artifact-discovery
+- uses: hoverkraft-tech/ci-github-python/actions/package/test@4b801b911424c68370a3e713bc5404151ab4d772 # main
   with:
     # uv package directory with a build-system.
     # Default: `.`

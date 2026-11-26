@@ -26,6 +26,7 @@ jobs:
       id-token: write
     with:
       working-directory: tests/python-project
+      test: '{"coverage":"github-code-quality","report-group":"fixture"}'
       python-versions: '["3.13", "3.15"]'
       dependency-review: false
       package: '{"tests": "python -I -c \"from ci_python_fixture import add; assert add(2, 3) == 5\""}'
@@ -39,3 +40,15 @@ jobs:
       working-directory: must-not-exist
       lint: exit 99
       test: exit 99
+
+  collect-native-coverage:
+    name: Verify coverage from the primary runtime
+    needs: fixture
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/ci-reports.yml@71ce8b3ff53d6673617b19fa01d6637c916d4948 # coverage support (PR #683, unreleased)
+    permissions:
+      contents: read
+      pull-requests: write
+    with:
+      comment: false
+      job-results: ${{ toJSON(needs) }}
+      coverage-reports: '[{"job":"fixture","label":"tests/python-project"}]'

@@ -36,7 +36,7 @@ test("test configuration rejects unsupported coverage destinations", (t) => {
   );
   assert.equal(
     runActionStep(actionFile, "validate", directory, {
-      COVERAGE: "",
+      COVERAGE: "github-code-quality",
       RACE: "true",
     }).status,
     0,

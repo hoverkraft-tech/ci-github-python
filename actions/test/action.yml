@@ -27,6 +27,15 @@ description: |
   See the [continuous integration workflow](../../.github/workflows/continuous-integration.md#reports-and-permissions) for consolidated reporting and permissions.
 
   <!-- jscpd:ignore-end -->
+
+  Native `coverage: github-code-quality` prepares Cobertura artifacts for the common
+  [CI reports workflow](https://github.com/hoverkraft-tech/ci-github-common/blob/main/.github/workflows/ci-reports.md)
+  and its opt-in publication workflow. Set `report-group` to the outer calling job
+  and list every expected component in the collector. The default label is the
+  repository-relative working directory, or `root`. Multiple reports need explicit
+  stable labels. Reports must measure the PR head commit, not the PR merge commit.
+  Keep merge-result validation separately when required. No upload permission is
+  needed in this test action; only the publication job needs `code-quality: write`.
 author: hoverkraft
 branding:
   icon: package
@@ -38,13 +47,23 @@ inputs:
   command:
     description: Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting.
     default: uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml
+  coverage-reports:
+    description: |
+      Native GitHub coverage reports as a JSON array of file, language and optional label.
+      Empty uses cobertura.xml; multiple reports require explicit unique labels.
+      Every file must be Cobertura XML produced by the test command. Paths are relative
+      to working-directory. Example: [{"file":"coverage.xml","language":"Python","label":"backend"}].
+    default: ""
   coverage:
-    description: "Publication only: `github`, `codecov`, or empty. Collection is controlled by command."
+    description: "Publication only: `github`, `github-code-quality`, `codecov`, or empty. Collection is controlled by command."
     default: github
   report-group:
     description: Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.
     default: ""
 outputs:
+  native-coverage-artifact-id:
+    description: Cobertura artifact for native GitHub publication, empty unless github-code-quality is selected.
+    value: ${{ steps.native-coverage.outputs.artifact-id }}
   report-artifact-id:
     description: Native report artifact ID. Empty when no reports were produced.
     value: ${{ steps.report-artifact.outputs.artifact-id }}
@@ -60,7 +79,7 @@ runs:
       env:
         COVERAGE: ${{ inputs.coverage }}
       run: |
-        case "$COVERAGE" in github|codecov|'') ;; *) echo 'coverage must be github, codecov or empty.' >&2; exit 1 ;; esac
+        case "$COVERAGE" in github|github-code-quality|codecov|'') ;; *) echo 'coverage must be github, github-code-quality, codecov or empty.' >&2; exit 1 ;; esac
     - id: run
       shell: bash
       working-directory: ${{ steps.directory.outputs.absolute-path }}
@@ -80,7 +99,7 @@ runs:
       uses: $/.github/actions/parse-ci-reports
       with:
         directory: ${{ steps.directory.outputs.absolute-path }}
-        report-paths: ${{ inputs.coverage == 'github' && 'auto:test,auto:coverage' || 'auto:test' }}
+        report-paths: ${{ (inputs.coverage == 'github' || inputs.coverage == 'github-code-quality') && 'auto:test,auto:coverage' || 'auto:test' }}
         report-name: Python test results
         group: ${{ inputs.report-group || github.job }}
     - name: Upload coverage to Codecov
@@ -90,3 +109,12 @@ runs:
         working-directory: ${{ steps.directory.outputs.absolute-path }}
         files: cobertura.xml
         fail-ci-if-error: "true"
+
+    - name: Prepare native GitHub coverage
+      id: native-coverage
+      if: ${{ !cancelled() && steps.run.outcome != 'skipped' && inputs.coverage == 'github-code-quality' }}
+      uses: hoverkraft-tech/ci-github-common/actions/quality/coverage-reports@71ce8b3ff53d6673617b19fa01d6637c916d4948 # coverage support (PR #683, unreleased)
+      with:
+        working-directory: ${{ steps.directory.outputs.absolute-path }}
+        report-group: ${{ inputs.report-group || github.job }}
+        reports: ${{ inputs.coverage-reports || '[{"file":"cobertura.xml","language":"Python"}]' }}

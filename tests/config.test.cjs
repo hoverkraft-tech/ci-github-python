@@ -113,3 +113,24 @@ test("distribution checks are opt-in and validate consumer commands", async () =
     await assert.rejects(() => parse({ PACKAGE: value }));
   }
 });
+
+test("preserves native coverage configuration and rejects ambiguous input types", async () => {
+  const options = {
+    coverage: "github-code-quality",
+    "report-group": "backend",
+    "coverage-reports": [
+      { file: "custom.xml", language: "Python", label: "backend" },
+    ],
+  };
+  const actual = JSON.parse(
+    (await parse({ TEST: JSON.stringify(options) })).test,
+  );
+  for (const [key, value] of Object.entries(options))
+    assert.deepEqual(actual[key], value);
+  for (const invalid of [
+    { "coverage-reports": {} },
+    { "report-group": "bad/group" },
+  ]) {
+    await assert.rejects(() => parse({ TEST: JSON.stringify(invalid) }));
+  }
+});

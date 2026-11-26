@@ -26,6 +26,7 @@ jobs:
     uses: $/.github/workflows/__test-workflow-continuous-integration.yml
     permissions:
       contents: read
+      pull-requests: write
       id-token: write
   test-action-setup-python:
     uses: $/.github/workflows/__test-action-setup-python.yml

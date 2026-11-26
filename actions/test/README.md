@@ -56,6 +56,15 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 
 <!-- jscpd:ignore-end -->
 
+Native `coverage: github-code-quality` prepares Cobertura artifacts for the common
+[CI reports workflow](https://github.com/hoverkraft-tech/ci-github-common/blob/main/.github/workflows/ci-reports.md)
+and its opt-in publication workflow. Set `report-group` to the outer calling job
+and list every expected component in the collector. The default label is the
+repository-relative working directory, or `root`. Multiple reports need explicit
+stable labels. Reports must measure the PR head commit, not the PR merge commit.
+Keep merge-result validation separately when required. No upload permission is
+needed in this test action; only the publication job needs `code-quality: write`.
+
 <!-- overview:end -->
 
 <!-- jscpd:ignore-start -->
@@ -66,7 +75,7 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/test@4b801b911424c68370a3e713bc5404151ab4d772 # main
+- uses: hoverkraft-tech/ci-github-python/actions/test@9fe07ffb0ede25d9311ca9e3d8c82d1ce38e7d75 # 0.0.1
   with:
     # uv project directory.
     # Default: `.`
@@ -77,7 +86,13 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
     command: uv run --locked pytest --junitxml=junit.xml --cov
       --cov-report=term-missing --cov-report=xml:cobertura.xml
 
-    # Publication only: `github`, `codecov`, or empty. Collection is controlled by command.
+    # Native GitHub coverage reports as a JSON array of file, language and optional label.
+    # Empty uses cobertura.xml; multiple reports require explicit unique labels.
+    # Every file must be Cobertura XML produced by the test command. Paths are relative
+    # to working-directory. Example: [{"file":"coverage.xml","language":"Python","label":"backend"}].
+    coverage-reports: ""
+
+    # Publication only: `github`, `github-code-quality`, `codecov`, or empty. Collection is controlled by command.
     # Default: `github`
     coverage: github
 
@@ -95,7 +110,11 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
 | **`working-directory`** | uv project directory.                                                                                                              | **false**    | `.`                                                                                                          |
 | **`command`**           | Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting. | **false**    | `uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml` |
-| **`coverage`**          | Publication only: `github`, `codecov`, or empty. Collection is controlled by command.                                              | **false**    | `github`                                                                                                     |
+| **`coverage-reports`**  | Native GitHub coverage reports as a JSON array of file, language and optional label.                                               | **false**    | -                                                                                                            |
+|                         | Empty uses cobertura.xml; multiple reports require explicit unique labels.                                                         |              |                                                                                                              |
+|                         | Every file must be Cobertura XML produced by the test command. Paths are relative                                                  |              |                                                                                                              |
+|                         | to working-directory. Example: [{"file":"coverage.xml","language":"Python","label":"backend"}].                                    |              |                                                                                                              |
+| **`coverage`**          | Publication only: `github`, `github-code-quality`, `codecov`, or empty. Collection is controlled by command.                       | **false**    | `github`                                                                                                     |
 | **`report-group`**      | Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.            | **false**    | -                                                                                                            |
 
 <!-- inputs:end -->
@@ -107,9 +126,10 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 
 ## Outputs
 
-| **Output**               | **Description**                                                 |
-| ------------------------ | --------------------------------------------------------------- |
-| **`report-artifact-id`** | Native report artifact ID. Empty when no reports were produced. |
+| **Output**                        | **Description**                                                                                 |
+| --------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **`native-coverage-artifact-id`** | Cobertura artifact for native GitHub publication, empty unless github-code-quality is selected. |
+| **`report-artifact-id`**          | Native report artifact ID. Empty when no reports were produced.                                 |
 
 <!-- outputs:end -->
 

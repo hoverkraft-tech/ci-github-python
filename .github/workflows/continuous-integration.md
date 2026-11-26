@@ -149,7 +149,7 @@ on:
 permissions: {}
 jobs:
   continuous-integration:
-    uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@244c9508c64e31d1a87327cc9ed07a13c235c454 # main
+    uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@9fe07ffb0ede25d9311ca9e3d8c82d1ce38e7d75 # 0.0.1
     permissions:
       contents: read
       id-token: write
@@ -173,7 +173,7 @@ jobs:
       # Default: `true`
       lint: "true"
 
-      # true for default tests, a trusted Bash command, or a JSON object with command, coverage (`github`, `codecov` or empty). false, null or empty disables tests. Coverage publication runs only on the last version; the command controls collection.
+      # true for defaults, a Bash command, or JSON options (command, coverage, coverage-reports, report-group). false, null or empty disables tests. Only the primary runtime publishes coverage.
       # Default: `true`
       test: "true"
 
@@ -202,18 +202,18 @@ jobs:
 
 ### Workflow Call Inputs
 
-| **Input**               | **Description**                                                                                                                                                                                                                                   | **Required** | **Type**    | **Default**         |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- | ------------------- |
-| **`runs-on`**           | JSON array of Linux runner labels for all jobs.                                                                                                                                                                                                   | **false**    | **string**  | `["ubuntu-latest"]` |
-| **`checks`**            | Enable all checks, including distribution checks.                                                                                                                                                                                                 | **false**    | **boolean** | `true`              |
-| **`working-directory`** | One project directory inside the checkout. Use a caller matrix for multiple projects.                                                                                                                                                             | **false**    | **string**  | `.`                 |
-| **`python-versions`**   | JSON array of Python versions. The last entry runs lint, audit and package checks and publishes coverage. Empty runs project detection once. An empty entry uses the project version.                                                             | **false**    | **string**  | -                   |
-| **`lint`**              | true for default checks, a trusted Bash command, or a JSON object with command. false, null or empty disables lint.                                                                                                                               | **false**    | **string**  | `true`              |
-| **`test`**              | true for default tests, a trusted Bash command, or a JSON object with command, coverage (`github`, `codecov` or empty). false, null or empty disables tests. Coverage publication runs only on the last version; the command controls collection. | **false**    | **string**  | `true`              |
-| **`audit`**             | Check production dependencies for known vulnerabilities.                                                                                                                                                                                          | **false**    | **boolean** | `true`              |
-| **`dependency-review`** | Review dependency changes on pull requests. Requires GitHub dependency review availability.                                                                                                                                                       | **false**    | **boolean** | `true`              |
-| **`package`**           | false disables distribution tests. true builds and installs wheel and sdist. A JSON object with tests supplies consumer smoke commands. Does not publish packages.                                                                                | **false**    | **string**  | `false`             |
-| **`uv-version`**        | Pinned uv release.                                                                                                                                                                                                                                | **false**    | **string**  | `0.13.9`            |
+| **Input**               | **Description**                                                                                                                                                                           | **Required** | **Type**    | **Default**         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- | ------------------- |
+| **`runs-on`**           | JSON array of Linux runner labels for all jobs.                                                                                                                                           | **false**    | **string**  | `["ubuntu-latest"]` |
+| **`checks`**            | Enable all checks, including distribution checks.                                                                                                                                         | **false**    | **boolean** | `true`              |
+| **`working-directory`** | One project directory inside the checkout. Use a caller matrix for multiple projects.                                                                                                     | **false**    | **string**  | `.`                 |
+| **`python-versions`**   | JSON array of Python versions. The last entry runs lint, audit and package checks and publishes coverage. Empty runs project detection once. An empty entry uses the project version.     | **false**    | **string**  | -                   |
+| **`lint`**              | true for default checks, a trusted Bash command, or a JSON object with command. false, null or empty disables lint.                                                                       | **false**    | **string**  | `true`              |
+| **`test`**              | true for defaults, a Bash command, or JSON options (command, coverage, coverage-reports, report-group). false, null or empty disables tests. Only the primary runtime publishes coverage. | **false**    | **string**  | `true`              |
+| **`audit`**             | Check production dependencies for known vulnerabilities.                                                                                                                                  | **false**    | **boolean** | `true`              |
+| **`dependency-review`** | Review dependency changes on pull requests. Requires GitHub dependency review availability.                                                                                               | **false**    | **boolean** | `true`              |
+| **`package`**           | false disables distribution tests. true builds and installs wheel and sdist. A JSON object with tests supplies consumer smoke commands. Does not publish packages.                        | **false**    | **string**  | `false`             |
+| **`uv-version`**        | Pinned uv release.                                                                                                                                                                        | **false**    | **string**  | `0.13.9`            |
 
 <!-- inputs:end -->
 

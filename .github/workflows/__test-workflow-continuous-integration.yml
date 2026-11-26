@@ -12,13 +12,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Assert - Workflow configuration tests pass
-        uses: hoverkraft-tech/ci-github-nodejs/actions/test@98d91b1cc347efc64cd5fb20bc0ebc076acad114 # 3.1.0
+        uses: hoverkraft-tech/ci-github-nodejs/actions/test@11636b817040a2a7d61b389c28fa1b401c37a2fa # unified reports (PR #624, unreleased)
         with:
           command: test:ci
           arguments: '["tests/config.test.cjs"]'
-          coverage: ""
-          comment: "false"
+          coverage: "false"
   fixture:
     uses: $/.github/workflows/continuous-integration.yml
     permissions:
@@ -26,7 +26,7 @@ jobs:
       id-token: write
     with:
       working-directory: tests/python-project
-      test: '{"coverage":"github-code-quality","report-group":"fixture"}'
+      test: '{"coverage":true}'
       python-versions: '["3.13", "3.15"]'
       dependency-review: false
       package: '{"tests": "python -I -c \"from ci_python_fixture import add; assert add(2, 3) == 5\""}'
@@ -44,12 +44,12 @@ jobs:
   collect-native-coverage:
     name: Verify coverage from the primary runtime
     needs: fixture
-    uses: hoverkraft-tech/ci-github-common/.github/workflows/ci-reports.yml@d52648f1645f1318908149af3f35b71b897ca566 # coverage support (PR #683, unreleased)
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/ci-reports.yml@5ea25078a15fe361993382872c03a63fd667c11a # unified reports (PR #683, unreleased)
     permissions:
       contents: read
       pull-requests: write
+      code-quality: write
+      id-token: write
     with:
       comment: false
-      concurrency-group: test-native-python-${{ github.run_id }}-${{ github.run_attempt }}
       job-results: ${{ toJSON(needs) }}
-      coverage-reports: '[{"job":"fixture","label":"tests/python-project"}]'

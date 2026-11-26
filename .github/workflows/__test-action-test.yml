@@ -15,14 +15,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
         name: Arrange - Check out the repository
       - name: Assert - Action contract tests pass
-        uses: hoverkraft-tech/ci-github-nodejs/actions/test@98d91b1cc347efc64cd5fb20bc0ebc076acad114 # 3.1.0
+        uses: hoverkraft-tech/ci-github-nodejs/actions/test@11636b817040a2a7d61b389c28fa1b401c37a2fa # unified reports (PR #624, unreleased)
         with:
           command: test:ci
           arguments: '["actions/test/action.test.cjs"]'
-          coverage: ""
-          comment: "false"
+          coverage: "false"
       - uses: $/actions/setup-python
         with:
           working-directory: tests/python-project
@@ -40,7 +40,7 @@ jobs:
           command: |-
             printf '%s' '<testsuites tests="1" failures="1"><testsuite name="failure" tests="1" failures="1"><testcase name="fails"><failure message="expected">failure</failure></testcase></testsuite></testsuites>' > junit.xml
             exit 17
-          coverage: ""
+          coverage: "false"
         name: Act - Run a failing test command
       - name: Assert failures and reports
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -71,5 +71,5 @@ jobs:
         env:
           REPORT_DIRECTORY: ${{ runner.temp }}/failed-reports
         run: |
-          test -f "$REPORT_DIRECTORY/junit.xml"
-          grep -q 'message="expected"' "$REPORT_DIRECTORY/junit.xml"
+          test -f "$REPORT_DIRECTORY/ci-report.json"
+          grep -rq 'message="expected"' "$REPORT_DIRECTORY/reports"

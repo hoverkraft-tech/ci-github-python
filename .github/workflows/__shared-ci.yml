@@ -5,7 +5,7 @@ name: Internal - Common Continuous Integration tasks
 permissions: {}
 jobs:
   linter:
-    uses: hoverkraft-tech/ci-github-common/.github/workflows/linter.yml@af0bdd6313bd49aaf4a8a7f0de005fb0db856b03 # 4.3.3
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/linter.yml@5ea25078a15fe361993382872c03a63fd667c11a # unified reports (PR #683, unreleased)
     permissions:
       contents: read
       statuses: write
@@ -28,6 +28,7 @@ jobs:
       contents: read
       pull-requests: write
       id-token: write
+      code-quality: write
   test-action-setup-python:
     uses: $/.github/workflows/__test-action-setup-python.yml
     permissions:
@@ -46,9 +47,5 @@ jobs:
       contents: read
   test-action-package-test:
     uses: $/.github/workflows/__test-action-package-test.yml
-    permissions:
-      contents: read
-  test-action-parse-ci-reports:
-    uses: $/.github/workflows/__test-action-parse-ci-reports.yml
     permissions:
       contents: read

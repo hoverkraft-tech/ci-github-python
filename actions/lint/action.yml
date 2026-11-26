@@ -28,13 +28,16 @@ inputs:
   command:
     description: Trusted Bash command replacing the default checks. Generate SARIF or Checkstyle reports for annotations.
     default: ""
-  report-group:
-    description: Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.
+  report-plan:
+    description: Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.
     default: ""
 outputs:
+  report-plan:
+    description: Expected lint report metadata. Forward from standalone jobs.
+    value: ${{ steps.report-plan.outputs.report-plan }}
   report-artifact-id:
-    description: Native report artifact ID. Empty when no reports were produced.
-    value: ${{ steps.report-artifact.outputs.artifact-id }}
+    description: Native lint report bundle.
+    value: ${{ steps.reports.outputs.artifact-id }}
 runs:
   using: composite
   steps:
@@ -42,6 +45,12 @@ runs:
       uses: hoverkraft-tech/ci-github-common/actions/working-directory@af0bdd6313bd49aaf4a8a7f0de005fb0db856b03 # 4.3.3
       with:
         working-directory: ${{ inputs.working-directory }}
+    - id: report-plan
+      uses: hoverkraft-tech/ci-github-common/actions/quality/record-ci-reports@5ea25078a15fe361993382872c03a63fd667c11a # unified reports (PR #683, unreleased)
+      with:
+        operation: plan
+        report-plan: ${{ inputs.report-plan }}
+        producers: '[{"key":"lint","type":"lint","directory":${{ toJSON(steps.directory.outputs.workspace-relative-path || ''.'') }},"coverage":[]}]'
     - id: run
       shell: bash
       working-directory: ${{ steps.directory.outputs.absolute-path }}
@@ -62,12 +71,11 @@ runs:
         uv run --locked black --check . || status=1
         uv run --locked mypy . || status=1
         exit "$status"
-    - name: Report lint results
-      id: report-artifact
-      if: ${{ !cancelled() && steps.run.outcome != 'skipped' }}
-      uses: $/.github/actions/parse-ci-reports
+    - id: reports
+      name: Record lint results
+      if: ${{ !cancelled() && steps.run.outcome != 'skipped' && steps.report-plan.outcome == 'success' }}
+      uses: hoverkraft-tech/ci-github-common/actions/quality/record-ci-reports@5ea25078a15fe361993382872c03a63fd667c11a # unified reports (PR #683, unreleased)
       with:
-        directory: ${{ steps.directory.outputs.absolute-path }}
+        working-directory: ${{ steps.directory.outputs.absolute-path }}
+        report-plan: ${{ steps.report-plan.outputs.report-plan }}
         report-paths: auto:lint
-        report-name: Python lint results
-        group: ${{ inputs.report-group || github.job }}

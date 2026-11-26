@@ -14,13 +14,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Assert - Action contract tests pass
-        uses: hoverkraft-tech/ci-github-nodejs/actions/test@98d91b1cc347efc64cd5fb20bc0ebc076acad114 # 3.1.0
+        uses: hoverkraft-tech/ci-github-nodejs/actions/test@11636b817040a2a7d61b389c28fa1b401c37a2fa # unified reports (PR #624, unreleased)
         with:
           command: test:ci
           arguments: '["actions/setup-python/action.test.cjs"]'
-          coverage: ""
-          comment: "false"
+          coverage: "false"
       - name: Act - Detect the runtime and install dependencies
         uses: $/actions/setup-python
         with:

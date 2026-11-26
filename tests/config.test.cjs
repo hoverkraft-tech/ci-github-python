@@ -61,17 +61,17 @@ test("disables checks and preserves explicitly supplied command bytes", async ()
   }
   const command = 'printf "%s\n" "$VALUE"\nexit 17';
   const result = await parse({
-    TEST: JSON.stringify({ command, coverage: "" }),
+    TEST: JSON.stringify({ command, coverage: false }),
   });
   assert.equal(JSON.parse(result.test).command, command);
-  assert.equal(JSON.parse(result.test).coverage, "");
+  assert.equal(JSON.parse(result.test).coverage, false);
   assert.equal(
     JSON.parse((await parse({ LINT: "make lint" })).lint).command,
     "make lint",
   );
 });
 
-test("rejects misspelled options, invalid types and unknown coverage providers", async () => {
+test("rejects misspelled options, invalid types and non-boolean coverage options", async () => {
   for (const key of ["LINT", "TEST"]) {
     for (const value of [
       "{",
@@ -87,7 +87,7 @@ test("rejects misspelled options, invalid types and unknown coverage providers",
       );
     }
   }
-  for (const coverage of ["unknown", false, null]) {
+  for (const coverage of ["unknown", "false", null]) {
     await assert.rejects(() => parse({ TEST: JSON.stringify({ coverage }) }));
   }
 });
@@ -116,8 +116,7 @@ test("distribution checks are opt-in and validate consumer commands", async () =
 
 test("preserves native coverage configuration and rejects ambiguous input types", async () => {
   const options = {
-    coverage: "github-code-quality",
-    "report-group": "backend",
+    coverage: true,
     "coverage-reports": [
       { file: "custom.xml", language: "Python", label: "backend" },
     ],

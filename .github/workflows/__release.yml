@@ -17,6 +17,7 @@ jobs:
       actions: read
       security-events: write
       id-token: write
+      code-quality: write
   release:
     name: Create and publish release
     needs: ci

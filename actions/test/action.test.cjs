@@ -25,7 +25,7 @@ test("custom commands retain quoting and fail without continuing to default tool
   assert.equal(fs.readFileSync(output, "utf8"), 'quotes " and $(not-executed)');
 });
 
-test("test configuration rejects unsupported coverage destinations", (t) => {
+test("test configuration rejects non-boolean coverage configuration", (t) => {
   const directory = createWorkspace(t);
   assert.notEqual(
     runActionStep(actionFile, "validate", directory, {
@@ -36,7 +36,7 @@ test("test configuration rejects unsupported coverage destinations", (t) => {
   );
   assert.equal(
     runActionStep(actionFile, "validate", directory, {
-      COVERAGE: "github-code-quality",
+      COVERAGE: "true",
       RACE: "true",
     }).status,
     0,

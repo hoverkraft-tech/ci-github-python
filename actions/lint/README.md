@@ -2,12 +2,6 @@
 
 # ![Icon](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJmZWF0aGVyIGZlYXRoZXItcGFja2FnZSIgY29sb3I9ImJsdWUiPjxsaW5lIHgxPSIxNi41IiB5MT0iOS40IiB4Mj0iNy41IiB5Mj0iNC4yMSI+PC9saW5lPjxwYXRoIGQ9Ik0yMSAxNlY4YTIgMiAwIDAgMC0xLTEuNzNsLTctNGEyIDIgMCAwIDAtMiAwbC03IDRBMiAyIDAgMCAwIDMgOHY4YTIgMiAwIDAgMCAxIDEuNzNsNyA0YTIgMiAwIDAgMCAyIDBsNy00QTIgMiAwIDAgMCAyMSAxNnoiPjwvcGF0aD48cG9seWxpbmUgcG9pbnRzPSIzLjI3IDYuOTYgMTIgMTIuMDEgMjAuNzMgNi45NiI+PC9wb2x5bGluZT48bGluZSB4MT0iMTIiIHkxPSIyMi4wOCIgeDI9IjEyIiB5Mj0iMTIiPjwvbGluZT48L3N2Zz4=) GitHub Action: Lint Python
 
-<div align="center">
-  <img src="../../.github/logo.svg" width="60px" align="center" alt="Lint Python" />
-</div>
-
----
-
 <!-- header:end -->
 
 <!-- jscpd:ignore-start -->
@@ -56,7 +50,7 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/lint@4b801b911424c68370a3e713bc5404151ab4d772 # main
+- uses: hoverkraft-tech/ci-github-python/actions/lint@ea81a685d9e862c5f13215d8b95476a4c0aa70d8 # feat/native-github-coverage
   with:
     # uv project directory.
     # Default: `.`
@@ -65,8 +59,8 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
     # Trusted Bash command replacing the default checks. Generate SARIF or Checkstyle reports for annotations.
     command: ""
 
-    # Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.
-    report-group: ""
+    # Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.
+    report-plan: ""
 ```
 
 <!-- usage:end -->
@@ -75,11 +69,11 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 
 ## Inputs
 
-| **Input**               | **Description**                                                                                                         | **Required** | **Default** |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`working-directory`** | uv project directory.                                                                                                   | **false**    | `.`         |
-| **`command`**           | Trusted Bash command replacing the default checks. Generate SARIF or Checkstyle reports for annotations.                | **false**    | -           |
-| **`report-group`**      | Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted. | **false**    | -           |
+| **Input**               | **Description**                                                                                          | **Required** | **Default** |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`working-directory`** | uv project directory.                                                                                    | **false**    | `.`         |
+| **`command`**           | Trusted Bash command replacing the default checks. Generate SARIF or Checkstyle reports for annotations. | **false**    | -           |
+| **`report-plan`**       | Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.      | **false**    | -           |
 
 <!-- inputs:end -->
 
@@ -90,9 +84,10 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 
 ## Outputs
 
-| **Output**               | **Description**                                                 |
-| ------------------------ | --------------------------------------------------------------- |
-| **`report-artifact-id`** | Native report artifact ID. Empty when no reports were produced. |
+| **Output**               | **Description**                                              |
+| ------------------------ | ------------------------------------------------------------ |
+| **`report-plan`**        | Expected lint report metadata. Forward from standalone jobs. |
+| **`report-artifact-id`** | Native lint report bundle.                                   |
 
 <!-- outputs:end -->
 

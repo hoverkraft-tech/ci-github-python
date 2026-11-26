@@ -2,12 +2,6 @@
 
 # ![Icon](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJmZWF0aGVyIGZlYXRoZXItcGFja2FnZSIgY29sb3I9ImJsdWUiPjxsaW5lIHgxPSIxNi41IiB5MT0iOS40IiB4Mj0iNy41IiB5Mj0iNC4yMSI+PC9saW5lPjxwYXRoIGQ9Ik0yMSAxNlY4YTIgMiAwIDAgMC0xLTEuNzNsLTctNGEyIDIgMCAwIDAtMiAwbC03IDRBMiAyIDAgMCAwIDMgOHY4YTIgMiAwIDAgMCAxIDEuNzNsNyA0YTIgMiAwIDAgMCAyIDBsNy00QTIgMiAwIDAgMCAyMSAxNnoiPjwvcGF0aD48cG9seWxpbmUgcG9pbnRzPSIzLjI3IDYuOTYgMTIgMTIuMDEgMjAuNzMgNi45NiI+PC9wb2x5bGluZT48bGluZSB4MT0iMTIiIHkxPSIyMi4wOCIgeDI9IjEyIiB5Mj0iMTIiPjwvbGluZT48L3N2Zz4=) GitHub Action: Test Python
 
-<div align="center">
-  <img src="../../.github/logo.svg" width="60px" align="center" alt="Test Python" />
-</div>
-
----
-
 <!-- header:end -->
 
 <!-- jscpd:ignore-start -->
@@ -29,41 +23,15 @@
 
 ## Overview
 
-Run project-locked pytest with JUnit and Cobertura coverage.
+Run Python tests and retain native test and coverage reports.
 
-Declare pytest and pytest-cov in the default uv dependency groups. Configure
-coverage sources in `[tool.coverage.run]` to avoid measuring unrelated code.
-A trusted Bash `command` replaces the default and must produce JUnit for test
-reporting and `cobertura.xml` for coverage. The common parser handles both formats.
+Use the matching setup action first. Commands must generate JUnit reports.
+Coverage collection requires Cobertura XML. The test command controls instrumentation.
 
-<!-- jscpd:ignore-start -->
-<!-- Shared setup and reporting guidance for standalone actions. -->
-
-Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
-
-<!-- jscpd:ignore-end -->
-
-`coverage: "github"` is the default. Set `coverage: "codecov"` and grant the
-job `id-token: write` for OIDC upload of `cobertura.xml`. An empty coverage
-value disables publication while retaining JUnit; collection is controlled by
-the command. Custom commands must produce the applicable report files.
-
-<!-- jscpd:ignore-start -->
-<!-- Shared setup and reporting guidance for standalone actions. -->
-
-Native reports survive command failures and are retained for seven days.
-See the [continuous integration workflow](../../.github/workflows/continuous-integration.md#reports-and-permissions) for consolidated reporting and permissions.
-
-<!-- jscpd:ignore-end -->
-
-Native `coverage: github-code-quality` prepares Cobertura artifacts for the common
-[CI reports workflow](https://github.com/hoverkraft-tech/ci-github-common/blob/main/.github/workflows/ci-reports.md)
-and its opt-in publication workflow. Set `report-group` to the outer calling job
-and list every expected component in the collector. The default label is the
-repository-relative working directory, or `root`. Multiple reports need explicit
-stable labels. Reports must measure the PR head commit, not the PR merge commit.
-Keep merge-result validation separately when required. No upload permission is
-needed in this test action; only the publication job needs `code-quality: write`.
+Forward report-plan from standalone jobs, or use the reusable CI workflow, which
+exposes the complete expected plan automatically. Choose external coverage
+publication once in the common ci-reports workflow. This action posts no comments
+and needs no publication permissions. Available reports survive test failures.
 
 <!-- overview:end -->
 
@@ -75,7 +43,7 @@ needed in this test action; only the publication job needs `code-quality: write`
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/test@9fe07ffb0ede25d9311ca9e3d8c82d1ce38e7d75 # 0.0.1
+- uses: hoverkraft-tech/ci-github-python/actions/test@ea81a685d9e862c5f13215d8b95476a4c0aa70d8 # feat/native-github-coverage
   with:
     # uv project directory.
     # Default: `.`
@@ -86,18 +54,15 @@ needed in this test action; only the publication job needs `code-quality: write`
     command: uv run --locked pytest --junitxml=junit.xml --cov
       --cov-report=term-missing --cov-report=xml:cobertura.xml
 
-    # Native GitHub coverage reports as a JSON array of file, language and optional label.
-    # Empty uses cobertura.xml; multiple reports require explicit unique labels.
-    # Every file must be Cobertura XML produced by the test command. Paths are relative
-    # to working-directory. Example: [{"file":"coverage.xml","language":"Python","label":"backend"}].
+    # Optional JSON array of Cobertura file, language and label. Empty uses cobertura.xml and the project directory as its stable label.
     coverage-reports: ""
 
-    # Publication only: `github`, `github-code-quality`, `codecov`, or empty. Collection is controlled by command.
-    # Default: `github`
-    coverage: github
+    # Require and collect Cobertura coverage. Set false to retain only available native diagnostics. Instrumentation is controlled by the test command.
+    # Default: `true`
+    coverage: "true"
 
-    # Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.
-    report-group: ""
+    # Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.
+    report-plan: ""
 ```
 
 <!-- usage:end -->
@@ -106,16 +71,13 @@ needed in this test action; only the publication job needs `code-quality: write`
 
 ## Inputs
 
-| **Input**               | **Description**                                                                                                                    | **Required** | **Default**                                                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
-| **`working-directory`** | uv project directory.                                                                                                              | **false**    | `.`                                                                                                          |
-| **`command`**           | Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting. | **false**    | `uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml` |
-| **`coverage-reports`**  | Native GitHub coverage reports as a JSON array of file, language and optional label.                                               | **false**    | -                                                                                                            |
-|                         | Empty uses cobertura.xml; multiple reports require explicit unique labels.                                                         |              |                                                                                                              |
-|                         | Every file must be Cobertura XML produced by the test command. Paths are relative                                                  |              |                                                                                                              |
-|                         | to working-directory. Example: [{"file":"coverage.xml","language":"Python","label":"backend"}].                                    |              |                                                                                                              |
-| **`coverage`**          | Publication only: `github`, `github-code-quality`, `codecov`, or empty. Collection is controlled by command.                       | **false**    | `github`                                                                                                     |
-| **`report-group`**      | Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.            | **false**    | -                                                                                                            |
+| **Input**               | **Description**                                                                                                                                   | **Required** | **Default**                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
+| **`working-directory`** | uv project directory.                                                                                                                             | **false**    | `.`                                                                                                          |
+| **`command`**           | Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting.                | **false**    | `uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml` |
+| **`coverage-reports`**  | Optional JSON array of Cobertura file, language and label. Empty uses cobertura.xml and the project directory as its stable label.                | **false**    | -                                                                                                            |
+| **`coverage`**          | Require and collect Cobertura coverage. Set false to retain only available native diagnostics. Instrumentation is controlled by the test command. | **false**    | `true`                                                                                                       |
+| **`report-plan`**       | Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.                                               | **false**    | -                                                                                                            |
 
 <!-- inputs:end -->
 
@@ -126,10 +88,10 @@ needed in this test action; only the publication job needs `code-quality: write`
 
 ## Outputs
 
-| **Output**                        | **Description**                                                                                 |
-| --------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **`native-coverage-artifact-id`** | Cobertura artifact for native GitHub publication, empty unless github-code-quality is selected. |
-| **`report-artifact-id`**          | Native report artifact ID. Empty when no reports were produced.                                 |
+| **Output**               | **Description**                                                       |
+| ------------------------ | --------------------------------------------------------------------- |
+| **`report-plan`**        | Expected report metadata. Forward from standalone jobs.               |
+| **`report-artifact-id`** | Native report bundle, including available diagnostics after failures. |
 
 <!-- outputs:end -->
 

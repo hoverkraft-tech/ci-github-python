@@ -16,6 +16,7 @@ jobs:
       actions: read
       security-events: write
       id-token: write
+      code-quality: write
   release:
     needs: ci
     if: github.event_name != 'schedule' && vars.CI_BOT_APP_CLIENT_ID != ''

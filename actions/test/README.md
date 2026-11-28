@@ -2,12 +2,6 @@
 
 # ![Icon](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJmZWF0aGVyIGZlYXRoZXItcGFja2FnZSIgY29sb3I9ImJsdWUiPjxsaW5lIHgxPSIxNi41IiB5MT0iOS40IiB4Mj0iNy41IiB5Mj0iNC4yMSI+PC9saW5lPjxwYXRoIGQ9Ik0yMSAxNlY4YTIgMiAwIDAgMC0xLTEuNzNsLTctNGEyIDIgMCAwIDAtMiAwbC03IDRBMiAyIDAgMCAwIDMgOHY4YTIgMiAwIDAgMCAxIDEuNzNsNyA0YTIgMiAwIDAgMCAyIDBsNy00QTIgMiAwIDAgMCAyMSAxNnoiPjwvcGF0aD48cG9seWxpbmUgcG9pbnRzPSIzLjI3IDYuOTYgMTIgMTIuMDEgMjAuNzMgNi45NiI+PC9wb2x5bGluZT48bGluZSB4MT0iMTIiIHkxPSIyMi4wOCIgeDI9IjEyIiB5Mj0iMTIiPjwvbGluZT48L3N2Zz4=) GitHub Action: Test Python
 
-<div align="center">
-  <img src="../../.github/logo.svg" width="60px" align="center" alt="Test Python" />
-</div>
-
----
-
 <!-- header:end -->
 
 <!-- jscpd:ignore-start -->
@@ -29,32 +23,16 @@
 
 ## Overview
 
-Run project-locked pytest with JUnit and Cobertura coverage.
+Run pytest with detailed test results on every runtime and optional coverage.
 
-Declare pytest and pytest-cov in the default uv dependency groups. Configure
-coverage sources in `[tool.coverage.run]` to avoid measuring unrelated code.
-A trusted Bash `command` replaces the default and must produce JUnit for test
-reporting and `cobertura.xml` for coverage. The common parser handles both formats.
+Run setup-python first. Default commands write JUnit and coverage.py XML into a
+fresh directory. Configure measured packages in [tool.coverage.run].
+Custom commands receive CI_REPORTS_DIR and CI_TEST_COVERAGE.
 
-<!-- jscpd:ignore-start -->
-<!-- Shared setup and reporting guidance for standalone actions. -->
-
-Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
-
-<!-- jscpd:ignore-end -->
-
-`coverage: "github"` is the default. Set `coverage: "codecov"` and grant the
-job `id-token: write` for OIDC upload of `cobertura.xml`. An empty coverage
-value disables publication while retaining JUnit; collection is controlled by
-the command. Custom commands must produce the applicable report files.
-
-<!-- jscpd:ignore-start -->
-<!-- Shared setup and reporting guidance for standalone actions. -->
-
-Native reports survive command failures and are retained for seven days.
-See the [continuous integration workflow](../../.github/workflows/continuous-integration.md#reports-and-permissions) for consolidated reporting and permissions.
-
-<!-- jscpd:ignore-end -->
+Reports are registered before execution and validated afterward, including after
+command failure. Missing or malformed required reports fail the action. Call
+the common ci-reports workflow once after all checks; no report outputs need forwarding.
+Producer jobs require actions: read and contents: read.
 
 <!-- overview:end -->
 
@@ -66,23 +44,26 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/test@4b801b911424c68370a3e713bc5404151ab4d772 # main
+- uses: hoverkraft-tech/ci-github-python/actions/test@aac96a4977a2025432625385dd73aeeebb7af64a # feat/native-github-coverage
   with:
     # uv project directory.
     # Default: `.`
     working-directory: .
 
-    # Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting.
-    # Default: `uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml`
-    command: uv run --locked pytest --junitxml=junit.xml --cov
-      --cov-report=term-missing --cov-report=xml:cobertura.xml
+    # Trusted Bash command replacing pytest. Write reports under CI_REPORTS_DIR and honor CI_TEST_COVERAGE for instrumentation.
+    command: ""
 
-    # Publication only: `github`, `codecov`, or empty. Collection is controlled by command.
-    # Default: `github`
-    coverage: github
+    # Collect test coverage. The default pytest command disables instrumentation when false.
+    # Default: `true`
+    coverage: "true"
 
-    # Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.
-    report-group: ""
+    # Required JUnit or TAP paths relative to CI_REPORTS_DIR, one per line.
+    # Default: `junit.xml`
+    test-results: junit.xml
+
+    # Required native coverage paths relative to CI_REPORTS_DIR when coverage is enabled, one per line.
+    # Default: `coverage.xml`
+    test-coverage: coverage.xml
 ```
 
 <!-- usage:end -->
@@ -91,12 +72,13 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 
 ## Inputs
 
-| **Input**               | **Description**                                                                                                                    | **Required** | **Default**                                                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
-| **`working-directory`** | uv project directory.                                                                                                              | **false**    | `.`                                                                                                          |
-| **`command`**           | Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting. | **false**    | `uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml` |
-| **`coverage`**          | Publication only: `github`, `codecov`, or empty. Collection is controlled by command.                                              | **false**    | `github`                                                                                                     |
-| **`report-group`**      | Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.            | **false**    | -                                                                                                            |
+| **Input**               | **Description**                                                                                                           | **Required** | **Default**    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------- |
+| **`working-directory`** | uv project directory.                                                                                                     | **false**    | `.`            |
+| **`command`**           | Trusted Bash command replacing pytest. Write reports under CI_REPORTS_DIR and honor CI_TEST_COVERAGE for instrumentation. | **false**    | -              |
+| **`coverage`**          | Collect test coverage. The default pytest command disables instrumentation when false.                                    | **false**    | `true`         |
+| **`test-results`**      | Required JUnit or TAP paths relative to CI_REPORTS_DIR, one per line.                                                     | **false**    | `junit.xml`    |
+| **`test-coverage`**     | Required native coverage paths relative to CI_REPORTS_DIR when coverage is enabled, one per line.                         | **false**    | `coverage.xml` |
 
 <!-- inputs:end -->
 
@@ -107,9 +89,9 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 
 ## Outputs
 
-| **Output**               | **Description**                                                 |
-| ------------------------ | --------------------------------------------------------------- |
-| **`report-artifact-id`** | Native report artifact ID. Empty when no reports were produced. |
+| **Output**               | **Description**                                                       |
+| ------------------------ | --------------------------------------------------------------------- |
+| **`report-artifact-id`** | Native report bundle, including available diagnostics after failures. |
 
 <!-- outputs:end -->
 

@@ -1,4 +1,3 @@
----
 name: Internal - Test continuous integration workflow
 "on":
   workflow_call: null
@@ -12,20 +11,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Assert - Workflow configuration tests pass
-        uses: hoverkraft-tech/ci-github-nodejs/actions/test@98d91b1cc347efc64cd5fb20bc0ebc076acad114 # 3.1.0
+        uses: hoverkraft-tech/ci-github-nodejs/actions/test@191d7230d57982bfc11d57f68b005f386a6d7fbf # 3.1.1
         with:
           command: test:ci
           arguments: '["tests/config.test.cjs"]'
-          coverage: ""
+          coverage: none
           comment: "false"
   fixture:
     uses: $/.github/workflows/continuous-integration.yml
     permissions:
       contents: read
       id-token: write
+      actions: read
     with:
       working-directory: tests/python-project
+      test: '{"coverage":true}'
       python-versions: '["3.13", "3.15"]'
       dependency-review: false
       package: '{"tests": "python -I -c \"from ci_python_fixture import add; assert add(2, 3) == 5\""}'
@@ -34,6 +36,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      actions: read
     with:
       checks: false
       working-directory: must-not-exist

@@ -31,16 +31,17 @@ async function parse(env = {}) {
   return outputs;
 }
 
-test("uses project detection by default and the last explicit version as primary", async () => {
+test("uses project detection by default and the highest explicit version as primary", async () => {
   const automatic = await parse();
   assert.deepEqual(automatic.versions, [""]);
   assert.equal(automatic["primary-version"], "");
-  const explicit = await parse({ VERSIONS: '["3.13", "3.15"]' });
-  assert.equal(explicit["primary-version"], explicit.versions.at(-1));
+  const explicit = await parse({ VERSIONS: '["3.15", "3.13"]' });
+  assert.equal(explicit["primary-version"], "3.15");
 });
 
 test("rejects ambiguous or unbounded version matrices", async () => {
   for (const value of [
+    '["", "3.15"]',
     "[]",
     '["1.2", "1.2"]',
     "[1.2]",
@@ -61,17 +62,17 @@ test("disables checks and preserves explicitly supplied command bytes", async ()
   }
   const command = 'printf "%s\n" "$VALUE"\nexit 17';
   const result = await parse({
-    TEST: JSON.stringify({ command, coverage: "" }),
+    TEST: JSON.stringify({ command, coverage: false }),
   });
   assert.equal(JSON.parse(result.test).command, command);
-  assert.equal(JSON.parse(result.test).coverage, "");
+  assert.equal(JSON.parse(result.test).coverage, false);
   assert.equal(
     JSON.parse((await parse({ LINT: "make lint" })).lint).command,
     "make lint",
   );
 });
 
-test("rejects misspelled options, invalid types and unknown coverage providers", async () => {
+test("rejects misspelled options, invalid types and non-boolean coverage options", async () => {
   for (const key of ["LINT", "TEST"]) {
     for (const value of [
       "{",
@@ -87,7 +88,7 @@ test("rejects misspelled options, invalid types and unknown coverage providers",
       );
     }
   }
-  for (const coverage of ["unknown", false, null]) {
+  for (const coverage of ["unknown", "false", null]) {
     await assert.rejects(() => parse({ TEST: JSON.stringify({ coverage }) }));
   }
 });
@@ -111,5 +112,24 @@ test("distribution checks are opt-in and validate consumer commands", async () =
     '{"tests":null}',
   ]) {
     await assert.rejects(() => parse({ PACKAGE: value }));
+  }
+});
+
+test("preserves declared native reports and rejects ambiguous input types", async () => {
+  const options = {
+    coverage: true,
+    "test-results": "junit.xml",
+    "test-coverage": "native.xml",
+  };
+  const actual = JSON.parse(
+    (await parse({ TEST: JSON.stringify(options) })).test,
+  );
+  for (const [key, value] of Object.entries(options))
+    assert.deepEqual(actual[key], value);
+  for (const invalid of [
+    { "test-coverage": {} },
+    { "report-plan": "obsolete" },
+  ]) {
+    await assert.rejects(() => parse({ TEST: JSON.stringify(invalid) }));
   }
 });

@@ -25,7 +25,7 @@ test("custom commands retain quoting and fail without continuing to default tool
   assert.equal(fs.readFileSync(output, "utf8"), 'quotes " and $(not-executed)');
 });
 
-test("test configuration rejects unsupported coverage destinations", (t) => {
+test("test configuration rejects non-boolean coverage configuration", (t) => {
   const directory = createWorkspace(t);
   assert.notEqual(
     runActionStep(actionFile, "validate", directory, {
@@ -36,9 +36,35 @@ test("test configuration rejects unsupported coverage destinations", (t) => {
   );
   assert.equal(
     runActionStep(actionFile, "validate", directory, {
-      COVERAGE: "",
+      COVERAGE: "true",
       RACE: "true",
     }).status,
     0,
   );
+});
+
+test("the default command writes into the fresh directory and disables coverage on secondary runtimes", (t) => {
+  const directory = createWorkspace(t);
+  const log = path.join(directory, "arguments.json");
+  fs.writeFileSync(
+    path.join(directory, "uv"),
+    `#!/usr/bin/env node
+require("node:fs").writeFileSync(process.env.ARGUMENT_LOG, JSON.stringify(process.argv.slice(2)));
+`,
+    { mode: 0o700 },
+  );
+  for (const coverage of ["true", "false"]) {
+    const result = runActionStep(actionFile, "run", directory, {
+      COMMAND: "",
+      CI_TEST_COVERAGE: coverage,
+      CI_REPORTS_DIR: path.join(directory, "fresh reports"),
+      PATH: `${directory}:${process.env.PATH}`,
+      ARGUMENT_LOG: log,
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const args = JSON.parse(fs.readFileSync(log, "utf8"));
+    assert.ok(args.includes(`--junitxml=${directory}/fresh reports/junit.xml`));
+    assert.equal(args.includes("--no-cov"), coverage === "false");
+    assert.equal(args.includes("--cov"), coverage === "true");
+  }
 });

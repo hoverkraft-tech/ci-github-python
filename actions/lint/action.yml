@@ -1,22 +1,14 @@
----
 name: Lint Python
 description: |
-  Run project-locked Ruff, Black and mypy.
+  Check Python using project-locked Ruff, Black and mypy.
 
-  Declare all three in the default uv dependency groups and configure them in
-  `pyproject.toml`. Ruff emits SARIF, Black checks formatting and mypy checks types.
-  All three execute even after one fails. A trusted Bash `command` replaces defaults;
-  emit SARIF or Checkstyle to retain annotations from custom checks.
+  Run setup-python first and declare these tools in the default uv dependency groups.
+  All checks execute even when another fails. Ruff writes SARIF into a fresh
+  report directory. Custom commands receive CI_REPORTS_DIR.
 
-  <!-- jscpd:ignore-start -->
-  <!-- Shared setup and reporting guidance for standalone actions. -->
-
-  Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
-
-  Native reports survive command failures and are retained for seven days.
-  See the [continuous integration workflow](../../.github/workflows/continuous-integration.md#reports-and-permissions) for consolidated reporting and permissions.
-
-  <!-- jscpd:ignore-end -->
+  Native diagnostics are registered before execution and validated after failures
+  as well as success. The common ci-reports workflow publishes the final feedback.
+  Producer jobs require actions: read and contents: read.
 author: hoverkraft
 branding:
   icon: package
@@ -26,15 +18,15 @@ inputs:
     description: uv project directory.
     default: .
   command:
-    description: Trusted Bash command replacing the default checks. Generate SARIF or Checkstyle reports for annotations.
+    description: Trusted Bash replacement for Ruff, Black and mypy. Write the declared reports under CI_REPORTS_DIR.
     default: ""
-  report-group:
-    description: Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.
-    default: ""
+  lint-results:
+    description: Required lint report paths relative to CI_REPORTS_DIR, one per line.
+    default: ruff.sarif
 outputs:
   report-artifact-id:
-    description: Native report artifact ID. Empty when no reports were produced.
-    value: ${{ steps.report-artifact.outputs.artifact-id }}
+    description: Native lint report bundle.
+    value: ${{ steps.reports.outputs.artifact-id }}
 runs:
   using: composite
   steps:
@@ -42,12 +34,34 @@ runs:
       uses: hoverkraft-tech/ci-github-common/actions/working-directory@af0bdd6313bd49aaf4a8a7f0de005fb0db856b03 # 4.3.3
       with:
         working-directory: ${{ inputs.working-directory }}
+    - id: definition
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        DIRECTORY: ${{ steps.directory.outputs.workspace-relative-path || '.' }}
+        WORKING_DIRECTORY: ${{ steps.directory.outputs.absolute-path }}
+        LINT_RESULTS: ${{ inputs.lint-results }}
+      with:
+        script: |
+          const paths = value => {
+            const result = value.split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+            if (!result.length) throw new Error('Required report paths must not be empty.');
+            return result;
+          };
+          const reports = paths(process.env.LINT_RESULTS).map(pattern => ({kind: 'lint', pattern}));
+          const runtime = await exec.getExecOutput('uv', ['run', '--locked', 'python', '-c', 'import platform; print(platform.python_version())'], {cwd: process.env.WORKING_DIRECTORY, silent: true});
+          core.setOutput('definition', {name: 'Python lint', project: process.env.DIRECTORY, variant: {runtime: runtime.stdout.trim()}, reports});
+    - id: prepare
+      uses: hoverkraft-tech/ci-github-common/actions/quality/record-ci-reports@ea5900049a1704d6d2b479cc6cce37e799f532a3 # PR #683 (unreleased)
+      with:
+        operation: prepare
+        definition: ${{ steps.definition.outputs.definition }}
     - id: run
       shell: bash
       working-directory: ${{ steps.directory.outputs.absolute-path }}
       env:
         COMMAND: ${{ inputs.command }}
         CI: "true"
+        CI_REPORTS_DIR: ${{ steps.prepare.outputs.report-directory }}
       run: |
         if [ -n "$COMMAND" ] && ! [[ "$COMMAND" =~ [^[:space:]] ]]; then
           echo "command must not contain only whitespace." >&2
@@ -58,16 +72,15 @@ runs:
           exit
         fi
         status=0
-        uv run --locked ruff check --output-format=sarif --output-file=ruff.sarif . || status=1
+        uv run --locked ruff check --output-format=sarif --output-file="$CI_REPORTS_DIR/ruff.sarif" . || status=1
         uv run --locked black --check . || status=1
         uv run --locked mypy . || status=1
         exit "$status"
-    - name: Report lint results
-      id: report-artifact
-      if: ${{ !cancelled() && steps.run.outcome != 'skipped' }}
-      uses: $/.github/actions/parse-ci-reports
+    - id: reports
+      name: Validate and retain native reports
+      if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
+      uses: hoverkraft-tech/ci-github-common/actions/quality/record-ci-reports@ea5900049a1704d6d2b479cc6cce37e799f532a3 # PR #683 (unreleased)
       with:
-        directory: ${{ steps.directory.outputs.absolute-path }}
-        report-paths: auto:lint
-        report-name: Python lint results
-        group: ${{ inputs.report-group || github.job }}
+        operation: finalize
+        recording: ${{ steps.prepare.outputs.recording }}
+        outcome: ${{ steps.run.outcome }}

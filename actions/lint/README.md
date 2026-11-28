@@ -2,12 +2,6 @@
 
 # ![Icon](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJmZWF0aGVyIGZlYXRoZXItcGFja2FnZSIgY29sb3I9ImJsdWUiPjxsaW5lIHgxPSIxNi41IiB5MT0iOS40IiB4Mj0iNy41IiB5Mj0iNC4yMSI+PC9saW5lPjxwYXRoIGQ9Ik0yMSAxNlY4YTIgMiAwIDAgMC0xLTEuNzNsLTctNGEyIDIgMCAwIDAtMiAwbC03IDRBMiAyIDAgMCAwIDMgOHY4YTIgMiAwIDAgMCAxIDEuNzNsNyA0YTIgMiAwIDAgMCAyIDBsNy00QTIgMiAwIDAgMCAyMSAxNnoiPjwvcGF0aD48cG9seWxpbmUgcG9pbnRzPSIzLjI3IDYuOTYgMTIgMTIuMDEgMjAuNzMgNi45NiI+PC9wb2x5bGluZT48bGluZSB4MT0iMTIiIHkxPSIyMi4wOCIgeDI9IjEyIiB5Mj0iMTIiPjwvbGluZT48L3N2Zz4=) GitHub Action: Lint Python
 
-<div align="center">
-  <img src="../../.github/logo.svg" width="60px" align="center" alt="Lint Python" />
-</div>
-
----
-
 <!-- header:end -->
 
 <!-- jscpd:ignore-start -->
@@ -29,22 +23,15 @@
 
 ## Overview
 
-Run project-locked Ruff, Black and mypy.
+Check Python using project-locked Ruff, Black and mypy.
 
-Declare all three in the default uv dependency groups and configure them in
-`pyproject.toml`. Ruff emits SARIF, Black checks formatting and mypy checks types.
-All three execute even after one fails. A trusted Bash `command` replaces defaults;
-emit SARIF or Checkstyle to retain annotations from custom checks.
+Run setup-python first and declare these tools in the default uv dependency groups.
+All checks execute even when another fails. Ruff writes SARIF into a fresh
+report directory. Custom commands receive CI_REPORTS_DIR.
 
-<!-- jscpd:ignore-start -->
-<!-- Shared setup and reporting guidance for standalone actions. -->
-
-Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
-
-Native reports survive command failures and are retained for seven days.
-See the [continuous integration workflow](../../.github/workflows/continuous-integration.md#reports-and-permissions) for consolidated reporting and permissions.
-
-<!-- jscpd:ignore-end -->
+Native diagnostics are registered before execution and validated after failures
+as well as success. The common ci-reports workflow publishes the final feedback.
+Producer jobs require actions: read and contents: read.
 
 <!-- overview:end -->
 
@@ -56,17 +43,18 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/lint@4b801b911424c68370a3e713bc5404151ab4d772 # main
+- uses: hoverkraft-tech/ci-github-python/actions/lint@aac96a4977a2025432625385dd73aeeebb7af64a # feat/native-github-coverage
   with:
     # uv project directory.
     # Default: `.`
     working-directory: .
 
-    # Trusted Bash command replacing the default checks. Generate SARIF or Checkstyle reports for annotations.
+    # Trusted Bash replacement for Ruff, Black and mypy. Write the declared reports under CI_REPORTS_DIR.
     command: ""
 
-    # Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted.
-    report-group: ""
+    # Required lint report paths relative to CI_REPORTS_DIR, one per line.
+    # Default: `ruff.sarif`
+    lint-results: ruff.sarif
 ```
 
 <!-- usage:end -->
@@ -75,11 +63,11 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 
 ## Inputs
 
-| **Input**               | **Description**                                                                                                         | **Required** | **Default** |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`working-directory`** | uv project directory.                                                                                                   | **false**    | `.`         |
-| **`command`**           | Trusted Bash command replacing the default checks. Generate SARIF or Checkstyle reports for annotations.                | **false**    | -           |
-| **`report-group`**      | Outer calling job ID for consolidated ci-reports. Defaults to the current job ID. No individual PR comments are posted. | **false**    | -           |
+| **Input**               | **Description**                                                                                     | **Required** | **Default**  |
+| ----------------------- | --------------------------------------------------------------------------------------------------- | ------------ | ------------ |
+| **`working-directory`** | uv project directory.                                                                               | **false**    | `.`          |
+| **`command`**           | Trusted Bash replacement for Ruff, Black and mypy. Write the declared reports under CI_REPORTS_DIR. | **false**    | -            |
+| **`lint-results`**      | Required lint report paths relative to CI_REPORTS_DIR, one per line.                                | **false**    | `ruff.sarif` |
 
 <!-- inputs:end -->
 
@@ -90,9 +78,9 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 
 ## Outputs
 
-| **Output**               | **Description**                                                 |
-| ------------------------ | --------------------------------------------------------------- |
-| **`report-artifact-id`** | Native report artifact ID. Empty when no reports were produced. |
+| **Output**               | **Description**            |
+| ------------------------ | -------------------------- |
+| **`report-artifact-id`** | Native lint report bundle. |
 
 <!-- outputs:end -->
 

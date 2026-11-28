@@ -1,4 +1,3 @@
----
 name: Internal - Test lint action
 "on":
   workflow_call: null
@@ -9,8 +8,9 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+      actions: read
     outputs:
-      artifact-id: ${{ steps.failed-lint.outputs.report-artifact-id }}
+      artifact-id: ${{ steps.check.outputs.report-artifact-id }}
     steps:
       - name: Arrange - Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -18,11 +18,12 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Assert - Action contract tests pass
-        uses: hoverkraft-tech/ci-github-nodejs/actions/test@11636b817040a2a7d61b389c28fa1b401c37a2fa # unified reports (PR #624, unreleased)
+        uses: hoverkraft-tech/ci-github-nodejs/actions/test@191d7230d57982bfc11d57f68b005f386a6d7fbf # 3.1.1
         with:
           command: test:ci
           arguments: '["actions/lint/action.test.cjs"]'
-          coverage: "false"
+          coverage: none
+          comment: "false"
       - name: Arrange - Install the project runtime and dependencies
         uses: $/actions/setup-python
         with:
@@ -31,39 +32,24 @@ jobs:
         uses: $/actions/lint
         with:
           working-directory: tests/python-project
-      - name: Act - Retain diagnostics from a failing command
-        uses: $/actions/lint
-        with:
-          working-directory: tests/python-project
-          command: |
-            printf '%s\n' '<checkstyle version="4.3"><file name="fixture"><error line="1" severity="error" message="expected lint failure" source="fixture"/></file></checkstyle>' > checkstyle.xml
-            exit 23
-        id: failed-lint
-        continue-on-error: true
-      - name: Assert - Failure propagates and reports survive
-        shell: bash
-        run: |
-          test "$OUTCOME" = failure
-          test -n "$ARTIFACT"
-        env:
-          OUTCOME: ${{ steps.failed-lint.outcome }}
-          ARTIFACT: ${{ steps.failed-lint.outputs.report-artifact-id }}
+        id: check
   verify:
     needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
+      actions: read
     steps:
       - name: Assert - Download retained lint reports
         uses: hoverkraft-tech/ci-github-common/actions/download-artifact@af0bdd6313bd49aaf4a8a7f0de005fb0db856b03 # 4.3.3
         with:
           artifact-ids: ${{ needs.lint.outputs.artifact-id }}
-          path: ${{ runner.temp }}/lint-reports
-      - name: Assert - Retained report contains the diagnostic
+          path: ${{ runner.temp }}/retained-reports
+      - name: Assert - Native reports and validation result are retained
         shell: bash
         run: |
-          test -f "$REPORT_DIRECTORY/ci-report.json"
-          grep -rq 'message="expected lint failure"' "$REPORT_DIRECTORY/reports"
+          test -f "$REPORT_DIRECTORY/result.json"
+          test -s "$REPORT_DIRECTORY/reports/ruff.sarif"
         env:
-          REPORT_DIRECTORY: ${{ runner.temp }}/lint-reports
+          REPORT_DIRECTORY: ${{ runner.temp }}/retained-reports

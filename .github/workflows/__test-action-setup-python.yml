@@ -1,4 +1,3 @@
----
 name: Internal - Test setup-python action
 "on":
   workflow_call: null
@@ -16,11 +15,12 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Assert - Action contract tests pass
-        uses: hoverkraft-tech/ci-github-nodejs/actions/test@11636b817040a2a7d61b389c28fa1b401c37a2fa # unified reports (PR #624, unreleased)
+        uses: hoverkraft-tech/ci-github-nodejs/actions/test@191d7230d57982bfc11d57f68b005f386a6d7fbf # 3.1.1
         with:
           command: test:ci
           arguments: '["actions/setup-python/action.test.cjs"]'
-          coverage: "false"
+          coverage: none
+          comment: "false"
       - name: Act - Detect the runtime and install dependencies
         uses: $/actions/setup-python
         with:

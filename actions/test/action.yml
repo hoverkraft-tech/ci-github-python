@@ -1,15 +1,15 @@
----
 name: Test Python
 description: |
-  Run Python tests and retain native test and coverage reports.
+  Run pytest with detailed test results on every runtime and optional coverage.
 
-  Use the matching setup action first. Commands must generate JUnit reports.
-  Coverage collection requires Cobertura XML. The test command controls instrumentation.
+  Run setup-python first. Default commands write JUnit and coverage.py XML into a
+  fresh directory. Configure measured packages in [tool.coverage.run].
+  Custom commands receive CI_REPORTS_DIR and CI_TEST_COVERAGE.
 
-  Forward report-plan from standalone jobs, or use the reusable CI workflow, which
-  exposes the complete expected plan automatically. Choose external coverage
-  publication once in the common ci-reports workflow. This action posts no comments
-  and needs no publication permissions. Available reports survive test failures.
+  Reports are registered before execution and validated afterward, including after
+  command failure. Missing or malformed required reports fail the action. Call
+  the common ci-reports workflow once after all checks; no report outputs need forwarding.
+  Producer jobs require actions: read and contents: read.
 author: hoverkraft
 branding:
   icon: package
@@ -19,22 +19,18 @@ inputs:
     description: uv project directory.
     default: .
   command:
-    description: Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting.
-    default: uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml
-  coverage-reports:
-    description: |-
-      Optional JSON array of Cobertura file, language and label. Empty uses cobertura.xml and the project directory as its stable label.
+    description: Trusted Bash command replacing pytest. Write reports under CI_REPORTS_DIR and honor CI_TEST_COVERAGE for instrumentation.
     default: ""
   coverage:
-    description: Require and collect Cobertura coverage. Set false to retain only available native diagnostics. Instrumentation is controlled by the test command.
+    description: Collect test coverage. The default pytest command disables instrumentation when false.
     default: "true"
-  report-plan:
-    description: Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.
-    default: ""
+  test-results:
+    description: Required JUnit or TAP paths relative to CI_REPORTS_DIR, one per line.
+    default: junit.xml
+  test-coverage:
+    description: Required native coverage paths relative to CI_REPORTS_DIR when coverage is enabled, one per line.
+    default: coverage.xml
 outputs:
-  report-plan:
-    description: Expected report metadata. Forward from standalone jobs.
-    value: ${{ steps.report-plan.outputs.report-plan }}
   report-artifact-id:
     description: Native report bundle, including available diagnostics after failures.
     value: ${{ steps.reports.outputs.artifact-id }}
@@ -50,31 +46,61 @@ runs:
       env:
         COVERAGE: ${{ inputs.coverage }}
       run: |
-        case "$COVERAGE" in true|false) ;; *) echo 'coverage must be true or false.' >&2; exit 1 ;; esac
-    - id: report-plan
-      uses: hoverkraft-tech/ci-github-common/actions/quality/record-ci-reports@11c842902d003cc4ee2fa1d42f6d80bc6828461a # unified reports (PR #683, unreleased)
+        case "$COVERAGE" in true|false) ;; *) echo "coverage must be true or false." >&2; exit 1 ;; esac
+    - id: definition
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        DIRECTORY: ${{ steps.directory.outputs.workspace-relative-path || '.' }}
+        WORKING_DIRECTORY: ${{ steps.directory.outputs.absolute-path }}
+        TEST_RESULTS: ${{ inputs.test-results }}
+        TEST_COVERAGE: ${{ inputs.test-coverage }}
+        COVERAGE: ${{ inputs.coverage }}
       with:
-        operation: plan
-        report-plan: ${{ inputs.report-plan }}
-        producers: '[{"key":"test","type":"test","directory":${{ toJSON(steps.directory.outputs.workspace-relative-path || ''.'') }},"coverage":${{ inputs.coverage == ''true'' && (inputs.coverage-reports || ''[{"file":"cobertura.xml","language":"Python"}]'') || ''[]'' }}}]'
+        script: |
+          const paths = value => {
+            const result = value.split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+            if (!result.length) throw new Error('Required report paths must not be empty.');
+            return result;
+          };
+          const reports = paths(process.env.TEST_RESULTS).map(pattern => ({kind: 'test', pattern}));
+          if (process.env.COVERAGE === 'true') reports.push(...paths(process.env.TEST_COVERAGE).map(pattern => ({kind: 'coverage', pattern, language: 'Python'})));
+          const runtime = await exec.getExecOutput('uv', ['run', '--locked', 'python', '-c', 'import platform; print(platform.python_version())'], {cwd: process.env.WORKING_DIRECTORY, silent: true});
+          core.setOutput('definition', {name: 'Python tests', project: process.env.DIRECTORY, variant: {runtime: runtime.stdout.trim()}, reports});
+    - id: prepare
+      uses: hoverkraft-tech/ci-github-common/actions/quality/record-ci-reports@ea5900049a1704d6d2b479cc6cce37e799f532a3 # PR #683 (unreleased)
+      with:
+        operation: prepare
+        definition: ${{ steps.definition.outputs.definition }}
     - id: run
       shell: bash
       working-directory: ${{ steps.directory.outputs.absolute-path }}
       env:
         COMMAND: ${{ inputs.command }}
         CI: "true"
+        CI_REPORTS_DIR: ${{ steps.prepare.outputs.report-directory }}
+        CI_TEST_COVERAGE: ${{ inputs.coverage }}
+        COVERAGE_FILE: ${{ steps.prepare.outputs.report-directory }}/.coverage
       run: |
-        test -n "$COMMAND" || { echo "command must not be empty." >&2; exit 1; }
         if [ -n "$COMMAND" ] && ! [[ "$COMMAND" =~ [^[:space:]] ]]; then
           echo "command must not contain only whitespace." >&2
           exit 1
         fi
-        bash --noprofile --norc -e -u -o pipefail -c "$COMMAND"
-    - name: Record test results
-      id: reports
-      if: ${{ !cancelled() && steps.run.outcome != 'skipped' && steps.report-plan.outcome == 'success' }}
-      uses: hoverkraft-tech/ci-github-common/actions/quality/record-ci-reports@11c842902d003cc4ee2fa1d42f6d80bc6828461a # unified reports (PR #683, unreleased)
+        if [ -n "$COMMAND" ]; then
+          bash --noprofile --norc -e -u -o pipefail -c "$COMMAND"
+          exit
+        fi
+        args=(--junitxml="$CI_REPORTS_DIR/junit.xml")
+        if [ "$CI_TEST_COVERAGE" = true ]; then
+          args+=(--cov --cov-report=term-missing --cov-report="xml:$CI_REPORTS_DIR/coverage.xml")
+        else
+          args+=(--no-cov)
+        fi
+        uv run --locked pytest "${args[@]}"
+    - id: reports
+      name: Validate and retain native reports
+      if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
+      uses: hoverkraft-tech/ci-github-common/actions/quality/record-ci-reports@ea5900049a1704d6d2b479cc6cce37e799f532a3 # PR #683 (unreleased)
       with:
-        working-directory: ${{ steps.directory.outputs.absolute-path }}
-        report-plan: ${{ steps.report-plan.outputs.report-plan }}
-        report-paths: auto:test
+        operation: finalize
+        recording: ${{ steps.prepare.outputs.recording }}
+        outcome: ${{ steps.run.outcome }}

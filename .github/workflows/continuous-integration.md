@@ -34,13 +34,14 @@ jobs:
   python:
     uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@main
     permissions:
+      actions: read
       contents: read
     with:
       working-directory: .
       python-versions: '["3.13", "3.15"]'
 ```
 
-An empty versions input uses project detection once. The last matrix entry is
+An empty versions input uses project detection once. The highest configured version is
 the primary version: lint, audit and package checks run there, and only
 that version contributes coverage. Tests run on every entry with fail-fast disabled.
 Duplicate, malformed and non-string versions are rejected. `runs-on` is a JSON
@@ -95,52 +96,23 @@ Build backends execute code; Python has no general equivalent to npm's
 
 ### Reports and coverage
 
-Lint and test jobs retain native diagnostics in one artifact per execution.
-They post no PR comments and need no publication permissions. Configure native
-test reports (JUnit or TAP) and lint reports (for example Checkstyle or SARIF).
-Missing required reports fail even when the tool command exits successfully.
-Available reports are retained after failures.
+Every runtime retains detailed test results. The highest configured version runs
+lint and coverage once. Default pytest commands disable coverage instrumentation
+on other versions. Custom commands receive CI_TEST_COVERAGE and CI_REPORTS_DIR.
+Outputs are validated by the test action, including after command failure.
 
-Tests require Cobertura by default. The highest configured runtime contributes
-coverage; every runtime retains its test results. Set `test: '{"coverage":false}'`
-for tests that deliberately produce no Cobertura. The command still controls
-instrumentation. Custom `test.coverage-reports` describes Cobertura file paths,
-Linguist languages and stable component labels; it belongs beside the producer.
-Separate components stay separate. Merge shards in the framework first.
-
-Call the common workflow once after producer workflows. It reads their complete
-report plans from `needs`, regardless of calling job names:
-
-```yaml
-reports:
-  needs: [checks]
-  if: ${{ always() }}
-  uses: hoverkraft-tech/ci-github-common/.github/workflows/ci-reports.yml@<commit-sha>
-  permissions:
-    contents: read
-    pull-requests: write
-    code-quality: write
-    id-token: write
-  with:
-    job-results: ${{ toJSON(needs) }}
-    coverage: github
-```
-
-Select `coverage: none` (default) for summaries, `github` for native GitHub
-coverage, or `codecov`. Both publishers consume validated Cobertura. Native
-GitHub coverage requires repository enablement and a default-branch baseline.
-The reporting workflow owns one CI comment and the `CI reports complete` check.
-Forks retain diagnostics without write operations. Partial reruns require
-rerunning all producers. Producer workflows test the PR head or push revision.
-
-Standalone action jobs forward their `report-plan` output. Custom outer matrices
-must forward a complete plan derived from their configuration; GitHub's last
-successful matrix output does not describe all executions. See the common
-[recording action](https://github.com/hoverkraft-tech/ci-github-common/tree/main/actions/quality/record-ci-reports)
-for the advanced contract. No collector-side coverage inventory is needed.
+Call ci-github-common's ci-reports.yml once after all producer jobs with
+job-results: toJSON(needs). No report plans or artifact IDs need forwarding.
+Producer calls need actions: read and contents: read. The reporting caller grants
+actions: read, contents: read, pull-requests: write, code-quality: write,
+id-token: write and security-events: write; internal publisher jobs narrow these.
+Lint and test results default to annotations. Coverage defaults to GitHub when
+available, then a comment or summary. Choose destinations using lint-reporters,
+test-results-reporters and test-coverage-reporters on that single reporting call.
 
 ### Permissions
 
+- **`actions`**: `read`
 - **`contents`**: `read`
 
 <!-- overview:end -->
@@ -161,8 +133,9 @@ on:
 permissions: {}
 jobs:
   continuous-integration:
-    uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@ea81a685d9e862c5f13215d8b95476a4c0aa70d8 # feat/native-github-coverage
+    uses: hoverkraft-tech/ci-github-python/.github/workflows/continuous-integration.yml@aac96a4977a2025432625385dd73aeeebb7af64a # feat/native-github-coverage
     permissions:
+      actions: read
       contents: read
     with:
       # JSON array of Linux runner labels for all jobs.
@@ -177,14 +150,14 @@ jobs:
       # Default: `.`
       working-directory: .
 
-      # JSON array of Python versions. The last entry runs lint, audit and package checks and contributes coverage. Empty runs project detection once. An empty entry uses the project version.
+      # JSON array of Python versions. The highest configured version runs lint, audit, package checks and coverage; every version retains test results. Empty uses project detection once.
       python-versions: ""
 
-      # true for default checks, a trusted Bash command, or a JSON object with command. false, null or empty disables lint.
+      # true for defaults, a Bash command, or JSON options (command, lint-results). false, null or empty disables lint.
       # Default: `true`
       lint: "true"
 
-      # true for defaults, a Bash command, or JSON options (command, coverage, coverage-reports). false, null or empty disables tests. Coverage is collected once, on the primary runtime.
+      # true for defaults, a Bash command, or JSON options (command, coverage, test-results, test-coverage). false, null or empty disables tests.
       # Default: `true`
       test: "true"
 
@@ -203,9 +176,6 @@ jobs:
       # Pinned uv release.
       # Default: `0.13.9`
       uv-version: 0.13.9
-
-      # Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.
-      report-plan: ""
 ```
 
 <!-- usage:end -->
@@ -216,19 +186,18 @@ jobs:
 
 ### Workflow Call Inputs
 
-| **Input**               | **Description**                                                                                                                                                                         | **Required** | **Type**    | **Default**         |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- | ------------------- |
-| **`runs-on`**           | JSON array of Linux runner labels for all jobs.                                                                                                                                         | **false**    | **string**  | `["ubuntu-latest"]` |
-| **`checks`**            | Enable all checks, including distribution checks.                                                                                                                                       | **false**    | **boolean** | `true`              |
-| **`working-directory`** | One project directory inside the checkout. Use a caller matrix for multiple projects.                                                                                                   | **false**    | **string**  | `.`                 |
-| **`python-versions`**   | JSON array of Python versions. The last entry runs lint, audit and package checks and contributes coverage. Empty runs project detection once. An empty entry uses the project version. | **false**    | **string**  | -                   |
-| **`lint`**              | true for default checks, a trusted Bash command, or a JSON object with command. false, null or empty disables lint.                                                                     | **false**    | **string**  | `true`              |
-| **`test`**              | true for defaults, a Bash command, or JSON options (command, coverage, coverage-reports). false, null or empty disables tests. Coverage is collected once, on the primary runtime.      | **false**    | **string**  | `true`              |
-| **`audit`**             | Check production dependencies for known vulnerabilities.                                                                                                                                | **false**    | **boolean** | `true`              |
-| **`dependency-review`** | Review dependency changes on pull requests. Requires GitHub dependency review availability.                                                                                             | **false**    | **boolean** | `true`              |
-| **`package`**           | false disables distribution tests. true builds and installs wheel and sdist. A JSON object with tests supplies consumer smoke commands. Does not publish packages.                      | **false**    | **string**  | `false`             |
-| **`uv-version`**        | Pinned uv release.                                                                                                                                                                      | **false**    | **string**  | `0.13.9`            |
-| **`report-plan`**       | Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.                                                                                     | **false**    | **string**  | -                   |
+| **Input**               | **Description**                                                                                                                                                                     | **Required** | **Type**    | **Default**         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- | ------------------- |
+| **`runs-on`**           | JSON array of Linux runner labels for all jobs.                                                                                                                                     | **false**    | **string**  | `["ubuntu-latest"]` |
+| **`checks`**            | Enable all checks, including distribution checks.                                                                                                                                   | **false**    | **boolean** | `true`              |
+| **`working-directory`** | One project directory inside the checkout. Use a caller matrix for multiple projects.                                                                                               | **false**    | **string**  | `.`                 |
+| **`python-versions`**   | JSON array of Python versions. The highest configured version runs lint, audit, package checks and coverage; every version retains test results. Empty uses project detection once. | **false**    | **string**  | -                   |
+| **`lint`**              | true for defaults, a Bash command, or JSON options (command, lint-results). false, null or empty disables lint.                                                                     | **false**    | **string**  | `true`              |
+| **`test`**              | true for defaults, a Bash command, or JSON options (command, coverage, test-results, test-coverage). false, null or empty disables tests.                                           | **false**    | **string**  | `true`              |
+| **`audit`**             | Check production dependencies for known vulnerabilities.                                                                                                                            | **false**    | **boolean** | `true`              |
+| **`dependency-review`** | Review dependency changes on pull requests. Requires GitHub dependency review availability.                                                                                         | **false**    | **boolean** | `true`              |
+| **`package`**           | false disables distribution tests. true builds and installs wheel and sdist. A JSON object with tests supplies consumer smoke commands. Does not publish packages.                  | **false**    | **string**  | `false`             |
+| **`uv-version`**        | Pinned uv release.                                                                                                                                                                  | **false**    | **string**  | `0.13.9`            |
 
 <!-- inputs:end -->
 
@@ -236,13 +205,6 @@ jobs:
 <!-- secrets:end -->
 
 <!-- outputs:start -->
-
-## Outputs
-
-| **Output**        | **Description**                                                      |
-| ----------------- | -------------------------------------------------------------------- |
-| **`report-plan`** | Complete expected report plan, consumed automatically by ci-reports. |
-
 <!-- outputs:end -->
 
 <!-- jscpd:ignore-end -->

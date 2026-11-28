@@ -31,16 +31,17 @@ async function parse(env = {}) {
   return outputs;
 }
 
-test("uses project detection by default and the last explicit version as primary", async () => {
+test("uses project detection by default and the highest explicit version as primary", async () => {
   const automatic = await parse();
   assert.deepEqual(automatic.versions, [""]);
   assert.equal(automatic["primary-version"], "");
-  const explicit = await parse({ VERSIONS: '["3.13", "3.15"]' });
-  assert.equal(explicit["primary-version"], explicit.versions.at(-1));
+  const explicit = await parse({ VERSIONS: '["3.15", "3.13"]' });
+  assert.equal(explicit["primary-version"], "3.15");
 });
 
 test("rejects ambiguous or unbounded version matrices", async () => {
   for (const value of [
+    '["", "3.15"]',
     "[]",
     '["1.2", "1.2"]',
     "[1.2]",
@@ -114,12 +115,11 @@ test("distribution checks are opt-in and validate consumer commands", async () =
   }
 });
 
-test("preserves native coverage configuration and rejects ambiguous input types", async () => {
+test("preserves declared native reports and rejects ambiguous input types", async () => {
   const options = {
     coverage: true,
-    "coverage-reports": [
-      { file: "custom.xml", language: "Python", label: "backend" },
-    ],
+    "test-results": "junit.xml",
+    "test-coverage": "native.xml",
   };
   const actual = JSON.parse(
     (await parse({ TEST: JSON.stringify(options) })).test,
@@ -127,8 +127,8 @@ test("preserves native coverage configuration and rejects ambiguous input types"
   for (const [key, value] of Object.entries(options))
     assert.deepEqual(actual[key], value);
   for (const invalid of [
-    { "coverage-reports": {} },
-    { "report-group": "bad/group" },
+    { "test-coverage": {} },
+    { "report-plan": "obsolete" },
   ]) {
     await assert.rejects(() => parse({ TEST: JSON.stringify(invalid) }));
   }

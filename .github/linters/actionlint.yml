@@ -10,6 +10,4 @@ paths:
       { ignore: [^unknown permission scope "code-quality"\.] },
     .github/workflows/__shared-ci.yml:
       { ignore: [^unknown permission scope "code-quality"\.] },
-    .github/workflows/__test-workflow-continuous-integration.yml:
-      { ignore: [^unknown permission scope "code-quality"\.] },
   }

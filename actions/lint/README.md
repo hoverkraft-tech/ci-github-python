@@ -23,22 +23,15 @@
 
 ## Overview
 
-Run project-locked Ruff, Black and mypy.
+Check Python using project-locked Ruff, Black and mypy.
 
-Declare all three in the default uv dependency groups and configure them in
-`pyproject.toml`. Ruff emits SARIF, Black checks formatting and mypy checks types.
-All three execute even after one fails. A trusted Bash `command` replaces defaults;
-emit SARIF or Checkstyle to retain annotations from custom checks.
+Run setup-python first and declare these tools in the default uv dependency groups.
+All checks execute even when another fails. Ruff writes SARIF into a fresh
+report directory. Custom commands receive CI_REPORTS_DIR.
 
-<!-- jscpd:ignore-start -->
-<!-- Shared setup and reporting guidance for standalone actions. -->
-
-Run [setup-python](../setup-python/README.md) first with the same `working-directory`.
-
-Native reports survive command failures and are retained for seven days.
-See the [continuous integration workflow](../../.github/workflows/continuous-integration.md#reports-and-permissions) for consolidated reporting and permissions.
-
-<!-- jscpd:ignore-end -->
+Native diagnostics are registered before execution and validated after failures
+as well as success. The common ci-reports workflow publishes the final feedback.
+Producer jobs require actions: read and contents: read.
 
 <!-- overview:end -->
 
@@ -50,17 +43,18 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/lint@ea81a685d9e862c5f13215d8b95476a4c0aa70d8 # feat/native-github-coverage
+- uses: hoverkraft-tech/ci-github-python/actions/lint@aac96a4977a2025432625385dd73aeeebb7af64a # feat/native-github-coverage
   with:
     # uv project directory.
     # Default: `.`
     working-directory: .
 
-    # Trusted Bash command replacing the default checks. Generate SARIF or Checkstyle reports for annotations.
+    # Trusted Bash replacement for Ruff, Black and mypy. Write the declared reports under CI_REPORTS_DIR.
     command: ""
 
-    # Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.
-    report-plan: ""
+    # Required lint report paths relative to CI_REPORTS_DIR, one per line.
+    # Default: `ruff.sarif`
+    lint-results: ruff.sarif
 ```
 
 <!-- usage:end -->
@@ -69,11 +63,11 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 
 ## Inputs
 
-| **Input**               | **Description**                                                                                          | **Required** | **Default** |
-| ----------------------- | -------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`working-directory`** | uv project directory.                                                                                    | **false**    | `.`         |
-| **`command`**           | Trusted Bash command replacing the default checks. Generate SARIF or Checkstyle reports for annotations. | **false**    | -           |
-| **`report-plan`**       | Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.      | **false**    | -           |
+| **Input**               | **Description**                                                                                     | **Required** | **Default**  |
+| ----------------------- | --------------------------------------------------------------------------------------------------- | ------------ | ------------ |
+| **`working-directory`** | uv project directory.                                                                               | **false**    | `.`          |
+| **`command`**           | Trusted Bash replacement for Ruff, Black and mypy. Write the declared reports under CI_REPORTS_DIR. | **false**    | -            |
+| **`lint-results`**      | Required lint report paths relative to CI_REPORTS_DIR, one per line.                                | **false**    | `ruff.sarif` |
 
 <!-- inputs:end -->
 
@@ -84,10 +78,9 @@ See the [continuous integration workflow](../../.github/workflows/continuous-int
 
 ## Outputs
 
-| **Output**               | **Description**                                              |
-| ------------------------ | ------------------------------------------------------------ |
-| **`report-plan`**        | Expected lint report metadata. Forward from standalone jobs. |
-| **`report-artifact-id`** | Native lint report bundle.                                   |
+| **Output**               | **Description**            |
+| ------------------------ | -------------------------- |
+| **`report-artifact-id`** | Native lint report bundle. |
 
 <!-- outputs:end -->
 

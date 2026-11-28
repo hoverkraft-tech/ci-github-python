@@ -1,11 +1,10 @@
----
 name: Internal - Common Continuous Integration tasks
 "on":
   workflow_call: null
 permissions: {}
 jobs:
   linter:
-    uses: hoverkraft-tech/ci-github-common/.github/workflows/linter.yml@11c842902d003cc4ee2fa1d42f6d80bc6828461a # unified reports (PR #683, unreleased)
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/linter.yml@ea5900049a1704d6d2b479cc6cce37e799f532a3 # PR #683 (unreleased)
     permissions:
       contents: read
       statuses: write
@@ -26,26 +25,50 @@ jobs:
     uses: $/.github/workflows/__test-workflow-continuous-integration.yml
     permissions:
       contents: read
-      pull-requests: write
       id-token: write
-      code-quality: write
+      actions: read
   test-action-setup-python:
     uses: $/.github/workflows/__test-action-setup-python.yml
     permissions:
       contents: read
+      actions: read
   test-action-lint:
     uses: $/.github/workflows/__test-action-lint.yml
     permissions:
       contents: read
+      actions: read
   test-action-test:
     uses: $/.github/workflows/__test-action-test.yml
     permissions:
       contents: read
+      actions: read
   test-action-audit:
     uses: $/.github/workflows/__test-action-audit.yml
     permissions:
       contents: read
+      actions: read
   test-action-package-test:
     uses: $/.github/workflows/__test-action-package-test.yml
     permissions:
       contents: read
+      actions: read
+  reports:
+    if: ${{ !cancelled() }}
+    needs:
+      - linter
+      - test
+      - test-action-setup-python
+      - test-action-lint
+      - test-action-test
+      - test-action-audit
+      - test-action-package-test
+    uses: hoverkraft-tech/ci-github-common/.github/workflows/ci-reports.yml@ea5900049a1704d6d2b479cc6cce37e799f532a3 # PR #683 (unreleased)
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+      code-quality: write
+      id-token: write
+      security-events: write
+    with:
+      job-results: ${{ toJSON(needs) }}

@@ -23,15 +23,16 @@
 
 ## Overview
 
-Run Python tests and retain native test and coverage reports.
+Run pytest with detailed test results on every runtime and optional coverage.
 
-Use the matching setup action first. Commands must generate JUnit reports.
-Coverage collection requires Cobertura XML. The test command controls instrumentation.
+Run setup-python first. Default commands write JUnit and coverage.py XML into a
+fresh directory. Configure measured packages in [tool.coverage.run].
+Custom commands receive CI_REPORTS_DIR and CI_TEST_COVERAGE.
 
-Forward report-plan from standalone jobs, or use the reusable CI workflow, which
-exposes the complete expected plan automatically. Choose external coverage
-publication once in the common ci-reports workflow. This action posts no comments
-and needs no publication permissions. Available reports survive test failures.
+Reports are registered before execution and validated afterward, including after
+command failure. Missing or malformed required reports fail the action. Call
+the common ci-reports workflow once after all checks; no report outputs need forwarding.
+Producer jobs require actions: read and contents: read.
 
 <!-- overview:end -->
 
@@ -43,26 +44,26 @@ and needs no publication permissions. Available reports survive test failures.
 ## Usage
 
 ```yaml
-- uses: hoverkraft-tech/ci-github-python/actions/test@ea81a685d9e862c5f13215d8b95476a4c0aa70d8 # feat/native-github-coverage
+- uses: hoverkraft-tech/ci-github-python/actions/test@aac96a4977a2025432625385dd73aeeebb7af64a # feat/native-github-coverage
   with:
     # uv project directory.
     # Default: `.`
     working-directory: .
 
-    # Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting.
-    # Default: `uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml`
-    command: uv run --locked pytest --junitxml=junit.xml --cov
-      --cov-report=term-missing --cov-report=xml:cobertura.xml
+    # Trusted Bash command replacing pytest. Write reports under CI_REPORTS_DIR and honor CI_TEST_COVERAGE for instrumentation.
+    command: ""
 
-    # Optional JSON array of Cobertura file, language and label. Empty uses cobertura.xml and the project directory as its stable label.
-    coverage-reports: ""
-
-    # Require and collect Cobertura coverage. Set false to retain only available native diagnostics. Instrumentation is controlled by the test command.
+    # Collect test coverage. The default pytest command disables instrumentation when false.
     # Default: `true`
     coverage: "true"
 
-    # Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.
-    report-plan: ""
+    # Required JUnit or TAP paths relative to CI_REPORTS_DIR, one per line.
+    # Default: `junit.xml`
+    test-results: junit.xml
+
+    # Required native coverage paths relative to CI_REPORTS_DIR when coverage is enabled, one per line.
+    # Default: `coverage.xml`
+    test-coverage: coverage.xml
 ```
 
 <!-- usage:end -->
@@ -71,13 +72,13 @@ and needs no publication permissions. Available reports survive test failures.
 
 ## Inputs
 
-| **Input**               | **Description**                                                                                                                                   | **Required** | **Default**                                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
-| **`working-directory`** | uv project directory.                                                                                                                             | **false**    | `.`                                                                                                          |
-| **`command`**           | Trusted Bash test command. Configure measured packages in [tool.coverage.run]. Generate junit.xml and cobertura.xml for reporting.                | **false**    | `uv run --locked pytest --junitxml=junit.xml --cov --cov-report=term-missing --cov-report=xml:cobertura.xml` |
-| **`coverage-reports`**  | Optional JSON array of Cobertura file, language and label. Empty uses cobertura.xml and the project directory as its stable label.                | **false**    | -                                                                                                            |
-| **`coverage`**          | Require and collect Cobertura coverage. Set false to retain only available native diagnostics. Instrumentation is controlled by the test command. | **false**    | `true`                                                                                                       |
-| **`report-plan`**       | Expected producer metadata supplied by reusable workflows. Leave empty for a standalone invocation.                                               | **false**    | -                                                                                                            |
+| **Input**               | **Description**                                                                                                           | **Required** | **Default**    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------- |
+| **`working-directory`** | uv project directory.                                                                                                     | **false**    | `.`            |
+| **`command`**           | Trusted Bash command replacing pytest. Write reports under CI_REPORTS_DIR and honor CI_TEST_COVERAGE for instrumentation. | **false**    | -              |
+| **`coverage`**          | Collect test coverage. The default pytest command disables instrumentation when false.                                    | **false**    | `true`         |
+| **`test-results`**      | Required JUnit or TAP paths relative to CI_REPORTS_DIR, one per line.                                                     | **false**    | `junit.xml`    |
+| **`test-coverage`**     | Required native coverage paths relative to CI_REPORTS_DIR when coverage is enabled, one per line.                         | **false**    | `coverage.xml` |
 
 <!-- inputs:end -->
 
@@ -90,7 +91,6 @@ and needs no publication permissions. Available reports survive test failures.
 
 | **Output**               | **Description**                                                       |
 | ------------------------ | --------------------------------------------------------------------- |
-| **`report-plan`**        | Expected report metadata. Forward from standalone jobs.               |
 | **`report-artifact-id`** | Native report bundle, including available diagnostics after failures. |
 
 <!-- outputs:end -->

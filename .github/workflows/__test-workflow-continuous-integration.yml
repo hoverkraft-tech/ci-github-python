@@ -1,4 +1,3 @@
----
 name: Internal - Test continuous integration workflow
 "on":
   workflow_call: null
@@ -14,16 +13,18 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Assert - Workflow configuration tests pass
-        uses: hoverkraft-tech/ci-github-nodejs/actions/test@11636b817040a2a7d61b389c28fa1b401c37a2fa # unified reports (PR #624, unreleased)
+        uses: hoverkraft-tech/ci-github-nodejs/actions/test@191d7230d57982bfc11d57f68b005f386a6d7fbf # 3.1.1
         with:
           command: test:ci
           arguments: '["tests/config.test.cjs"]'
-          coverage: "false"
+          coverage: none
+          comment: "false"
   fixture:
     uses: $/.github/workflows/continuous-integration.yml
     permissions:
       contents: read
       id-token: write
+      actions: read
     with:
       working-directory: tests/python-project
       test: '{"coverage":true}'
@@ -35,21 +36,9 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      actions: read
     with:
       checks: false
       working-directory: must-not-exist
       lint: exit 99
       test: exit 99
-
-  collect-native-coverage:
-    name: Verify coverage from the primary runtime
-    needs: fixture
-    uses: hoverkraft-tech/ci-github-common/.github/workflows/ci-reports.yml@11c842902d003cc4ee2fa1d42f6d80bc6828461a # unified reports (PR #683, unreleased)
-    permissions:
-      contents: read
-      pull-requests: write
-      code-quality: write
-      id-token: write
-    with:
-      comment: false
-      job-results: ${{ toJSON(needs) }}

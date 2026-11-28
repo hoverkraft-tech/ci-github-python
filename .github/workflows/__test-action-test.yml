@@ -32,6 +32,7 @@ jobs:
         uses: $/actions/test
         with:
           working-directory: tests/python-project
+          coverage: "false"
         name: Act - Run default tests
   verify:
     needs: test
